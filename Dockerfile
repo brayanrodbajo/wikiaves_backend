@@ -12,5 +12,5 @@ COPY . /app/
 RUN pip install daphne
 RUN pip install -r requirements.txt
 
-COPY cpo/asgi.py /home/daphne/proj/
+COPY wikiaves_backend/asgi.py /home/daphne/proj/
 CMD daphne -b 0.0.0.0 -p 80 cpo.asgi:application
