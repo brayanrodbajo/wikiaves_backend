@@ -11,7 +11,8 @@ class TextAdmin(admin.ModelAdmin):
 
 @admin.register(Reference)
 class ReferenceAdmin(admin.ModelAdmin):
-    list_display = ('referenced', 'type', 'title', 'year', 'series', 'volume', 'edition', 'isbn', 'publisher', 'doi', 'url', 'initial_page', 'last_page', 'date_accessed',)
+    list_display = ('referenced', 'type', 'title', 'year', 'series', 'volume', 'edition', 'isbn', 'publisher', 'doi',
+                    'url', 'initial_page', 'last_page', 'date_accessed',)
 
 
 @admin.register(Author)
@@ -21,12 +22,12 @@ class AuthorAdmin(admin.ModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('scientific_name', 'common_names',)
+    list_display = ('scientific_name',)
 
 
 @admin.register(Family)
 class FamilyAdmin(admin.ModelAdmin):
-    list_display = ('scientific_name','common_names','order')
+    list_display = ('scientific_name', 'order')
 
 
 @admin.register(Identification)
@@ -56,7 +57,9 @@ class ConservationAdmin(admin.ModelAdmin):
 
 @admin.register(Bird)
 class BirdAdmin(admin.ModelAdmin):
-    list_display = ('scientific_name','common_names','family','description','identification','distribution','habitat','feeding','reproduction','behavior','taxonomy','conservation','curiosities','references','own_citation','last_updated',)
+    list_display = ('scientific_name', 'family', 'description', 'identification', 'distribution',
+                    'habitat', 'feeding', 'reproduction', 'behavior', 'taxonomy', 'conservation', 'curiosities',
+                    'own_citation', 'last_updated',)
 
 
 @admin.register(Image)
@@ -77,5 +80,3 @@ class AudioAdmin(admin.ModelAdmin):
 @admin.register(Length)
 class LengthAdmin(admin.ModelAdmin):
     list_display = ('length', 'unit', 'bird')
-
-

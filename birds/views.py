@@ -1,11 +1,20 @@
 from django.contrib.auth.models import User
-from rest_framework import generics, viewsets, views
+from rest_framework import generics, viewsets, views, status
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.mixins import ListModelMixin, CreateModelMixin
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
 
-from users.models import CustomUser
-from users.serializers import UserSerializer
+from birds.models import Bird
+from birds.serializers import BirdSerializer
 
 
-# ViewSets define the view behavior.
-class UserViewSet(views.APIView):
-    queryset = CustomUser.objects.all()
-    serializer_class = UserSerializer
+class Birds(ListCreateAPIView):
+    queryset = Bird.objects.all()
+    serializer_class = BirdSerializer
+    pagination_class = LimitOffsetPagination
+
+
+class SingleBird(RetrieveUpdateDestroyAPIView):
+    queryset = Bird.objects.all()
+    serializer_class = BirdSerializer

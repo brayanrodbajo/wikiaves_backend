@@ -48,68 +48,68 @@ class Reference(models.Model):
 class Author(models.Model):
     name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100, null=True, blank=True)
-    reference = models.ForeignKey(Reference, related_name='authors', on_delete=models.PROTECT)
+    reference = models.ForeignKey(Reference, related_name='authors', null=True, on_delete=models.SET_NULL)
 
 
 class Order(models.Model):
     scientific_name = models.CharField(max_length=500, unique=True)
-    common_names = models.ManyToManyField(Text, through='CommonNameOrder', null=True)
+    common_names = models.ManyToManyField(Text, through='CommonNameOrder')
 
 
 class Family(models.Model):
     scientific_name = models.CharField(max_length=500, unique=True)
-    common_names = models.ManyToManyField(Text, through='CommonNameFamily', null=True)
-    order = models.ForeignKey(Order, related_name='family', on_delete=models.PROTECT, null=True)
+    common_names = models.ManyToManyField(Text, through='CommonNameFamily')
+    order = models.ForeignKey(Order, related_name='family', null=True, on_delete=models.SET_NULL)
 
 
 class Identification(models.Model):
-    size_shape = models.ForeignKey(Text, on_delete=models.PROTECT, null=True)
-    similar_species = models.ForeignKey(Text, on_delete=models.PROTECT, null=True)
-    regional_differences = models.ForeignKey(Text, on_delete=models.PROTECT, null=True)
+    size_shape = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='identification_shape')
+    similar_species = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='identification_species')
+    regional_differences = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='identification_rd')
 
 
 class Habitat(models.Model):
     type = models.CharField(max_length=50, null=True, blank=True)
-    text = models.ForeignKey(Text, on_delete=models.PROTECT, null=True)
+    text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='habitat')
 
 
 class Feeding(models.Model):
     type = models.CharField(max_length=50, null=True, blank=True)
-    text = models.ForeignKey(Text, on_delete=models.PROTECT, null=True)
+    text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='feeding')
 
 
 class Reproduction(models.Model):
     type = models.CharField(max_length=50, null=True, blank=True)
-    text = models.ForeignKey(Text, on_delete=models.PROTECT, null=True)
+    text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='reproduction')
 
 
 class Conservation(models.Model):
     type = models.CharField(max_length=50, null=True, blank=True)
-    text = models.ForeignKey(Text, on_delete=models.PROTECT, null=True)
+    text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='conservation')
 
 
 class Bird(models.Model):
-    scientific_name = models.CharField(max_length=500, unique=True)
-    common_names = models.ManyToManyField(Text, through='CommonNameBird', null=True)
-    family = models.ForeignKey(Family, related_name='bird', on_delete=models.PROTECT, null=True)
-    description = models.ForeignKey(Text, on_delete=models.PROTECT, null=True)
-    identification = models.ForeignKey(Identification, related_name='bird', on_delete=models.PROTECT, null=True)
-    distribution = models.ForeignKey(Text, on_delete=models.PROTECT, null=True)
-    habitat = models.ForeignKey(Habitat, related_name='bird', on_delete=models.PROTECT, null=True)
-    feeding = models.ForeignKey(Feeding, related_name='bird', on_delete=models.PROTECT, null=True)
-    reproduction = models.ForeignKey(Reproduction, related_name='bird', on_delete=models.PROTECT, null=True)
-    behavior = models.ForeignKey(Text, on_delete=models.PROTECT, null=True)
-    taxonomy = models.ForeignKey(Text, on_delete=models.PROTECT, null=True)
-    conservation = models.ForeignKey(Conservation, related_name='bird', on_delete=models.PROTECT, null=True)
-    curiosities = models.ForeignKey(Text, on_delete=models.PROTECT, null=True)
+    scientific_name = models.CharField(max_length=500, unique=True)  # TODO: Check if there could be multiple
+    common_names = models.ManyToManyField(Text, through='CommonNameBird', related_name='birds_cn')
+    family = models.ForeignKey(Family, related_name='bird', null=True, on_delete=models.SET_NULL)
+    description = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='birds_desc')
+    identification = models.ForeignKey(Identification, related_name='bird', null=True, on_delete=models.SET_NULL)
+    distribution = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='birds_dist')
+    habitat = models.ForeignKey(Habitat, related_name='bird', null=True, on_delete=models.SET_NULL)
+    feeding = models.ForeignKey(Feeding, related_name='bird', null=True, on_delete=models.SET_NULL)
+    reproduction = models.ForeignKey(Reproduction, related_name='bird', null=True, on_delete=models.SET_NULL)
+    behavior = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='birds_beh')
+    taxonomy = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='birds_tax')
+    conservation = models.ForeignKey(Conservation, related_name='bird', null=True, on_delete=models.SET_NULL)
+    curiosities = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='birds_cur')
     references = models.ManyToManyField(Reference, through='ReferencesBird', related_name='bird_refs')
-    own_citation = models.ForeignKey(Reference, related_name='bird', on_delete=models.PROTECT)
+    own_citation = models.ForeignKey(Reference, related_name='bird', null=True, on_delete=models.SET_NULL)
     last_updated = models.DateTimeField(auto_now=True)
 
 
 class ReferencesBird(models.Model):
-    reference = models.ForeignKey(Reference, related_name='references_bird', on_delete=models.PROTECT)
-    bird = models.ForeignKey(Bird, related_name='references_bird', on_delete=models.PROTECT)
+    reference = models.ForeignKey(Reference, related_name='references_bird', null=True, on_delete=models.SET_NULL)
+    bird = models.ForeignKey(Bird, related_name='references_bird', null=True, on_delete=models.SET_NULL)
 
 
 class Image(models.Model):
@@ -128,7 +128,7 @@ class Image(models.Model):
     location = models.PointField(null=True, blank=True)
     height = models.FloatField(null=True, blank=True)
     width = models.FloatField(null=True, blank=True)
-    bird = models.ForeignKey(Bird, related_name='images', on_delete=models.PROTECT)
+    bird = models.ForeignKey(Bird, related_name='images', null=True, on_delete=models.SET_NULL)
 
 
 class Video(models.Model):
@@ -146,7 +146,7 @@ class Video(models.Model):
     format = models.CharField(max_length=4)
     location = models.PointField(null=True, blank=True)
     seconds = models.FloatField(null=True, blank=True)
-    bird = models.ForeignKey(Bird, related_name='videos', on_delete=models.PROTECT)
+    bird = models.ForeignKey(Bird, related_name='videos', null=True, on_delete=models.SET_NULL)
 
 
 class Audio(models.Model):
@@ -159,10 +159,10 @@ class Audio(models.Model):
         ('ORDER', ORDER),
     )
     url = models.URLField(unique=True)
-    author = models.ForeignKey(Author, related_name='audio', on_delete=models.PROTECT)
+    author = models.ForeignKey(Author, related_name='audio', null=True, on_delete=models.SET_NULL)
     format = models.CharField(max_length=4)
     location = models.PointField(null=True, blank=True)
-    bird = models.ForeignKey(Bird, related_name='singing', on_delete=models.PROTECT)
+    bird = models.ForeignKey(Bird, related_name='singing', null=True, on_delete=models.SET_NULL)
 
 
 class Length(models.Model):
@@ -174,22 +174,22 @@ class Length(models.Model):
     )
     length = models.FloatField()
     unit = models.CharField(max_length=2, choices=UNIT_CHOICES)
-    bird = models.ForeignKey(Bird, related_name='height', on_delete=models.PROTECT)
+    bird = models.ForeignKey(Bird, related_name='heights', null=True, on_delete=models.SET_NULL)
 
 
 class CommonNameOrder(models.Model):
-    order = models.ForeignKey(Order, related_name='common_name_order', on_delete=models.PROTECT)
-    text = models.ForeignKey(Text, related_name='common_name_order', on_delete=models.PROTECT)
+    order = models.ForeignKey(Order, related_name='common_name_order', null=True, on_delete=models.SET_NULL)
+    text = models.ForeignKey(Text, related_name='common_name_order', null=True, on_delete=models.SET_NULL)
 
 
 class CommonNameFamily(models.Model):
-    family = models.ForeignKey(Family, related_name='common_name_family', on_delete=models.PROTECT)
-    text = models.ForeignKey(Text, related_name='common_name_family', on_delete=models.PROTECT)
+    family = models.ForeignKey(Family, related_name='common_name_family', null=True, on_delete=models.SET_NULL)
+    text = models.ForeignKey(Text, related_name='common_name_family', null=True, on_delete=models.SET_NULL)
 
 
 class CommonNameBird(models.Model):
-    bird = models.ForeignKey(Bird, related_name='common_name_bird', on_delete=models.PROTECT)
-    text = models.ForeignKey(Text, related_name='common_name_bird', on_delete=models.PROTECT)
+    bird = models.ForeignKey(Bird, related_name='common_name_bird', null=True, on_delete=models.SET_NULL)
+    text = models.ForeignKey(Text, related_name='common_name_bird', null=True, on_delete=models.SET_NULL)
 
 
 
