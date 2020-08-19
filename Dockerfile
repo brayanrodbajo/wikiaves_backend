@@ -1,11 +1,29 @@
-FROM python:3-alpine
-ADD . /api
-WORKDIR /api
-# You will need this if you need PostgreSQL, otherwise just skip this
-RUN apk update && apk add postgresql-dev gcc python3-dev musl-dev libffi-dev
-RUN pip install -r requirements.txt
-# Installing uwsgi server
-RUN pip install uwsgi
+# Pull base image
+FROM python:3.7
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# install dependencies
+RUN pip install pipenv
+COPY . /code
+WORKDIR /code/
+RUN pipenv install --system
+
 EXPOSE 8000
-# This is not the best way to DO, SEE BELOW!!
-CMD uwsgi --http "0.0.0.0:8000" --module api.wsgi --master --processes 4 --threads 2
+
+# Setup GDAL
+RUN apt-get update &&\
+    apt-get install -y binutils libproj-dev gdal-bin python-gdal python3-gdal
+
+# set work directory
+WORKDIR /code/
+# Add wait-for-it
+#COPY wait-for-it.sh wait-for-it.sh
+#RUN ["chmod", "+x", "wait-for-it.sh"]
+#
+#ENTRYPOINT [ "/bin/bash", "-c" ]
+#CMD ["./wait-for-it.sh" , "postgis:5432" , "--strict" , "--timeout=300" , "--" , "python", "manage.py", "migrate", "--no-input"]
+
+CMD ["python", "manage.py", "migrate", "--no-input"]
