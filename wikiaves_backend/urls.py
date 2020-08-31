@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/users/',  include('users.urls')),
-    path('api/birds/',  include('birds.urls')),
+    path('wikiaves/admin/', admin.site.urls),
+    path('wikiaves/api/users/',  include('users.urls')),
+    path('wikiaves/api/birds/',  include('birds.urls')),
 ]
