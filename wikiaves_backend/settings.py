@@ -123,7 +123,17 @@ DATABASES = {
         'PORT': '5432',
     }
 }
-
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.contrib.gis.db.backends.postgis',
+#         'NAME': 'wiki_test',
+#         'USER': 'postgres',
+#         'HOST': 'localhost',
+#         'PASSWORD': 'brayan',
+#         'PORT': '5432',
+#         'OPTIONS': {'sslmode': 'require'},
+#     }
+# }
 
 # DATABASES['default'] = dj_database_url.config()
 
