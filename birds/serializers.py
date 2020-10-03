@@ -724,7 +724,6 @@ class LengthSerializer(serializers.ModelSerializer):
 
 class BirdSerializer(serializers.ModelSerializer):
     common_names = CommonNameBirdSerializer(required=False, many=True)
-    # common_name_bird = CommonNameBirdSerializer(required=False, many=True)
     scientific_names = ScientificNameBirdSerializer(required=False, many=True)
     images = ImageSerializer(many=True, required=False)
     videos = VideoSerializer(many=True, required=False)
@@ -835,16 +834,14 @@ class BirdSerializer(serializers.ModelSerializer):
                                    curiosities=curiosities, own_citation=own_citation, **validated_data)
 
         common_names = []
-        for common_name in common_names_data:
-            main = 'main' in common_name and common_name.pop('main')
-            serializer = TextSerializer(data=common_name['name'])
+        for c_n in common_names_data:
+            serializer = CommonNameBirdSerializer(data=c_n)
             if serializer.is_valid():
-                name = serializer.save()
-                c_n = CommonNameBird.objects.create(bird=bird, name=name,
-                                                    main=main)
-                c_n.save()
+                c_n = serializer.save()
+                common_names.append(c_n)
             else:
                 print(serializer.errors)
+        bird.common_names.set(common_names)
         scientific_names = []
         for sci_name in scientific_names_data:
             serializer = ScientificNameBirdSerializer(data=sci_name)
