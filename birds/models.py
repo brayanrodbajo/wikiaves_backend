@@ -49,23 +49,25 @@ class Author(models.Model):
     name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100, null=True, blank=True)
     reference = models.ForeignKey(Reference, related_name='authors', null=True, on_delete=models.SET_NULL)
+    image = models.URLField(null=True, blank=True)
+    url = models.URLField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
 
 
 class Order(models.Model):
-    scientific_name = models.CharField(max_length=500, unique=True)
-    common_names = models.ManyToManyField(Text, through='CommonNameOrder')
+    pass # the field is scientific_names in the ScientificNameOrder model
 
 
 class Family(models.Model):
-    scientific_name = models.CharField(max_length=500, unique=True)
-    common_names = models.ManyToManyField(Text, through='CommonNameFamily')
     order = models.ForeignKey(Order, related_name='family', null=True, on_delete=models.SET_NULL)
 
 
 class Identification(models.Model):
     size_shape = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='identification_shape')
-    similar_species = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='identification_species')
-    regional_differences = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='identification_rd')
+    similar_species = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL,
+                                        related_name='identification_species')
+    regional_differences = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL,
+                                             related_name='identification_rd')
 
 
 class Habitat(models.Model):
@@ -88,9 +90,35 @@ class Conservation(models.Model):
     text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='conservation')
 
 
+class SDYouth(models.Model):
+    image = models.ForeignKey('Image', related_name='sdyouth', null=True, on_delete=models.SET_NULL)
+    text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='sdyouth')
+
+
+class SDSubadult(models.Model):
+    image = models.ForeignKey('Image', related_name='sdsubadult', null=True, on_delete=models.SET_NULL)
+    text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='sdsubadult')
+
+
+class SDFemale(models.Model):
+    image = models.ForeignKey('Image', related_name='sdfemale', null=True, on_delete=models.SET_NULL)
+    text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='sdfemale')
+
+
+class SDMale(models.Model):
+    image = models.ForeignKey('Image', related_name='sdmale', null=True, on_delete=models.SET_NULL)
+    text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='sdmale')
+
+
+class SexualDifferentiation(models.Model):
+    youth = models.ForeignKey(SDYouth, null=True, on_delete=models.SET_NULL, related_name='sexual_diff')
+    subadult = models.ForeignKey(SDSubadult, null=True, on_delete=models.SET_NULL, related_name='sexual_diff')
+    female = models.ForeignKey(SDFemale, null=True, on_delete=models.SET_NULL, related_name='sexual_diff')
+    male = models.ForeignKey(SDMale, null=True, on_delete=models.SET_NULL, related_name='sexual_diff')
+
+
 class Bird(models.Model):
-    scientific_name = models.CharField(max_length=500, unique=True)  # TODO: Check if there could be multiple
-    common_names = models.ManyToManyField(Text, through='CommonNameBird', related_name='birds_cn')
+    # common_names = models.ManyToManyField(Text, through='CommonNameBird', related_name='birds_cn')
     family = models.ForeignKey(Family, related_name='bird', null=True, on_delete=models.SET_NULL)
     description = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='birds_desc')
     identification = models.ForeignKey(Identification, related_name='bird', null=True, on_delete=models.SET_NULL)
@@ -101,6 +129,8 @@ class Bird(models.Model):
     behavior = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='birds_beh')
     taxonomy = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='birds_tax')
     conservation = models.ForeignKey(Conservation, related_name='bird', null=True, on_delete=models.SET_NULL)
+    sexual_differentiation = models.ForeignKey(SexualDifferentiation, related_name='bird', null=True,
+                                               on_delete=models.SET_NULL)
     curiosities = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='birds_cur')
     references = models.ManyToManyField(Reference, through='ReferencesBird', related_name='bird_refs')
     own_citation = models.ForeignKey(Reference, related_name='bird', null=True, on_delete=models.SET_NULL)
@@ -177,19 +207,28 @@ class Length(models.Model):
     bird = models.ForeignKey(Bird, related_name='heights', null=True, on_delete=models.SET_NULL)
 
 
-class CommonNameOrder(models.Model):
-    order = models.ForeignKey(Order, related_name='common_name_order', null=True, on_delete=models.SET_NULL)
-    text = models.ForeignKey(Text, related_name='common_name_order', null=True, on_delete=models.SET_NULL)
+class ScientificNameOrder(models.Model):
+    order = models.ForeignKey(Order, related_name='scientific_names', null=True, on_delete=models.SET_NULL)
+    name = models.CharField(max_length=100)
+    main = models.BooleanField(default=False)
 
 
-class CommonNameFamily(models.Model):
-    family = models.ForeignKey(Family, related_name='common_name_family', null=True, on_delete=models.SET_NULL)
-    text = models.ForeignKey(Text, related_name='common_name_family', null=True, on_delete=models.SET_NULL)
+class ScientificNameFamily(models.Model):
+    family = models.ForeignKey(Family, related_name='scientific_names', null=True, on_delete=models.SET_NULL)
+    name = models.CharField(max_length=100)
+    main = models.BooleanField(default=False)
 
 
 class CommonNameBird(models.Model):
-    bird = models.ForeignKey(Bird, related_name='common_name_bird', null=True, on_delete=models.SET_NULL)
-    text = models.ForeignKey(Text, related_name='common_name_bird', null=True, on_delete=models.SET_NULL)
+    bird = models.ForeignKey(Bird, related_name='common_names', null=True, on_delete=models.SET_NULL)
+    name = models.ForeignKey(Text, related_name='common_name_bird', null=True, on_delete=models.SET_NULL)
+    main = models.BooleanField(default=False)
+
+
+class ScientificNameBird(models.Model):
+    bird = models.ForeignKey(Bird, related_name='scientific_names', null=True, on_delete=models.SET_NULL)
+    name = models.CharField(max_length=100)
+    main = models.BooleanField(default=False)
 
 
 

@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from birds.models import Bird, Text, Family, Identification, Habitat, Feeding, Reproduction, Conservation, Reference, \
-    Author, Image, Video, Audio, Length, Order
+    Author, Image, Video, Audio, Length, Order, SDYouth, SDSubadult, SDFemale, SDMale, SexualDifferentiation, \
+    ScientificNameOrder, ScientificNameFamily, CommonNameBird, ScientificNameBird
 
 
 class TextSerializer(serializers.ModelSerializer):
@@ -16,46 +17,98 @@ class AuthorSerializer(serializers.ModelSerializer):
         exclude = ('id', 'reference')
 
 
+class ScientificNameOrderSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ScientificNameOrder
+        fields = ('name', 'main')
+
+
+class ScientificNameFamilySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ScientificNameFamily
+        fields = ('name', 'main')
+
+
+class CommonNameBirdSerializer(serializers.ModelSerializer):
+    name = TextSerializer(required=False)
+
+    class Meta:
+        model = CommonNameBird
+        fields = ('name', 'main')
+
+    def create(self, validated_data):
+        name = validated_data.pop('name', None)
+        if name:
+            serializer = TextSerializer(data=name)
+            if serializer.is_valid():
+                name = serializer.save()
+            else:
+                print(serializer.errors)
+        c_n = CommonNameBird.objects.create(name=name, **validated_data)
+        return c_n
+
+    def update(self, instance, validated_data):
+        name = validated_data.get('name', None)
+        if name:
+            serializer = TextSerializer(instance.name, data=name)
+            if serializer.is_valid():
+                name = serializer.save()
+                instance.name = name
+            else:
+                print(serializer.errors)
+        instance.main = validated_data.get('main', None)
+        instance.save()
+        return instance
+
+
+class ScientificNameBirdSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ScientificNameBird
+        fields = ('name', 'main')
+
+
 class OrderSerializer(serializers.ModelSerializer):
-    common_names = TextSerializer(required=False, many=True)
+    scientific_names = ScientificNameOrderSerializer(required=False, many=True)
 
     class Meta:
         model = Order
         exclude = ('id',)
 
     def create(self, validated_data):
-        common_names_data = validated_data.pop('common_names', [])
+        scientific_names_data = validated_data.pop('scientific_names', [])
         order = Order.objects.create(**validated_data)
-        common_names = []
-        for common_name in common_names_data:
-            serializer = TextSerializer(data=common_name)
+        scientific_names = []
+        for scientific_name in scientific_names_data:
+            serializer = ScientificNameOrderSerializer(data=scientific_name)
             if serializer.is_valid():
                 c_n = serializer.save()
-                common_names.append(c_n)
+                scientific_names.append(c_n)
             else:
                 print(serializer.errors)
-        order.common_names.set(common_names)
+        order.scientific_names.set(scientific_names)
         return order
 
     def update(self, instance, validated_data):
-        common_names_data = validated_data.get('common_names', [])
-        common_names = []
-        instance.common_names.all().delete()
-        for common_name in common_names_data:
-            serializer = TextSerializer(data=common_name)
+        scientific_names_data = validated_data.get('scientific_names', [])
+        scientific_names = []
+        instance.scientific_names.all().delete()
+        for scientific_name in scientific_names_data:
+            serializer = ScientificNameOrderSerializer(data=scientific_name)
             if serializer.is_valid():
                 c_n = serializer.save()
-                common_names.append(c_n)
+                scientific_names.append(c_n)
             else:
                 print(serializer.errors)
-        instance.common_names.set(common_names)
-        instance.scientific_name = validated_data.get('scientific_name', None)
+        instance.scientific_names.set(scientific_names)
         instance.save()
         return instance
 
 
 class FamilySerializer(serializers.ModelSerializer):
-    common_names = TextSerializer(required=False, many=True)
+    scientific_names = ScientificNameFamilySerializer(required=False, many=True)
     order = OrderSerializer(required=False)
 
     class Meta:
@@ -70,17 +123,17 @@ class FamilySerializer(serializers.ModelSerializer):
                 order = serializer.save()
             else:
                 print(serializer.errors)
-        common_names_data = validated_data.pop('common_names', [])
+        scientific_names_data = validated_data.pop('scientific_names', [])
         family = Family.objects.create(order=order, **validated_data)
-        common_names = []
-        for common_name in common_names_data:
-            serializer = TextSerializer(data=common_name)
+        scientific_names = []
+        for scientific_name in scientific_names_data:
+            serializer = ScientificNameFamilySerializer(data=scientific_name)
             if serializer.is_valid():
                 c_n = serializer.save()
-                common_names.append(c_n)
+                scientific_names.append(c_n)
             else:
                 print(serializer.errors)
-        family.common_names.set(common_names)
+        family.scientific_names.set(scientific_names)
         return family
 
     def update(self, instance, validated_data):
@@ -92,18 +145,17 @@ class FamilySerializer(serializers.ModelSerializer):
                 instance.order = order
             else:
                 print(serializer.errors)
-        common_names_data = validated_data.get('common_names', [])
-        common_names = []
-        instance.common_names.all().delete()
-        for common_name in common_names_data:
-            serializer = TextSerializer(data=common_name)
+        scientific_names_data = validated_data.get('scientific_names', [])
+        scientific_names = []
+        instance.scientific_names.all().delete()
+        for scientific_name in scientific_names_data:
+            serializer = ScientificNameFamilySerializer(data=scientific_name)
             if serializer.is_valid():
                 c_n = serializer.save()
-                common_names.append(c_n)
+                scientific_names.append(c_n)
             else:
                 print(serializer.errors)
-        instance.common_names.set(common_names)
-        instance.scientific_name = validated_data.get('scientific_name', None)
+        instance.scientific_names.set(scientific_names)
         instance.save()
         return instance
 
@@ -139,7 +191,8 @@ class IdentificationSerializer(serializers.ModelSerializer):
                 regional_differences = serializer.save()
             else:
                 print(serializer.errors)
-        identification = Identification.objects.create(size_shape=size_shape, similar_species=similar_species, regional_differences=regional_differences)
+        identification = Identification.objects.create(size_shape=size_shape, similar_species=similar_species,
+                                                       regional_differences=regional_differences)
         return identification
 
     def update(self, instance, validated_data):
@@ -396,6 +449,273 @@ class AudioSerializer(serializers.ModelSerializer):
         return instance
 
 
+class SDYouthSerializer(serializers.ModelSerializer):
+    image = ImageSerializer(required=False)
+    text = TextSerializer(required=False)
+
+    class Meta:
+        model = SDYouth
+        exclude = ('id',)
+
+    def create(self, validated_data):
+        text = validated_data.pop('text', None)
+        if text:
+            serializer = TextSerializer(data=text)
+            if serializer.is_valid():
+                text = serializer.save()
+            else:
+                print(serializer.errors)
+        image = validated_data.pop('image', None)
+        if image:
+            serializer = ImageSerializer(data=image)
+            if serializer.is_valid():
+                image = serializer.save()
+            else:
+                print(serializer.errors)
+        sdyouth = SDYouth.objects.create(text=text, image=image)
+        return sdyouth
+
+    def update(self, instance, validated_data):
+        text = validated_data.get('text', None)
+        if text:
+            serializer = TextSerializer(instance.text, data=text)
+            if serializer.is_valid():
+                text = serializer.save()
+                instance.text = text
+            else:
+                print(serializer.errors)
+        image = validated_data.get('image', None)
+        if image:
+            serializer = ImageSerializer(instance.image, data=image)
+            if serializer.is_valid():
+                image = serializer.save()
+                instance.image = image
+            else:
+                print(serializer.errors)
+        instance.save()
+        return instance
+
+
+class SDSubadultSerializer(serializers.ModelSerializer):
+    image = ImageSerializer(required=False)
+    text = TextSerializer(required=False)
+
+    class Meta:
+        model = SDSubadult
+        exclude = ('id',)
+
+    def create(self, validated_data):
+        text = validated_data.pop('text', None)
+        if text:
+            serializer = TextSerializer(data=text)
+            if serializer.is_valid():
+                text = serializer.save()
+            else:
+                print(serializer.errors)
+        image = validated_data.pop('image', None)
+        if image:
+            serializer = ImageSerializer(data=image)
+            if serializer.is_valid():
+                image = serializer.save()
+            else:
+                print(serializer.errors)
+        sdsubadult = SDSubadult.objects.create(text=text, image=image)
+        return sdsubadult
+
+    def update(self, instance, validated_data):
+        text = validated_data.get('text', None)
+        if text:
+            serializer = TextSerializer(instance.text, data=text)
+            if serializer.is_valid():
+                text = serializer.save()
+                instance.text = text
+            else:
+                print(serializer.errors)
+        image = validated_data.get('image', None)
+        if image:
+            serializer = ImageSerializer(instance.image, data=image)
+            if serializer.is_valid():
+                image = serializer.save()
+                instance.image = image
+            else:
+                print(serializer.errors)
+        instance.save()
+        return instance
+
+
+class SDFemaleSerializer(serializers.ModelSerializer):
+    image = ImageSerializer(required=False)
+    text = TextSerializer(required=False)
+
+    class Meta:
+        model = SDFemale
+        exclude = ('id',)
+
+    def create(self, validated_data):
+        text = validated_data.pop('text', None)
+        if text:
+            serializer = TextSerializer(data=text)
+            if serializer.is_valid():
+                text = serializer.save()
+            else:
+                print(serializer.errors)
+        image = validated_data.pop('image', None)
+        if image:
+            serializer = ImageSerializer(data=image)
+            if serializer.is_valid():
+                image = serializer.save()
+            else:
+                print(serializer.errors)
+        sdfemale = SDFemale.objects.create(text=text, image=image)
+        return sdfemale
+
+    def update(self, instance, validated_data):
+        text = validated_data.get('text', None)
+        if text:
+            serializer = TextSerializer(instance.text, data=text)
+            if serializer.is_valid():
+                text = serializer.save()
+                instance.text = text
+            else:
+                print(serializer.errors)
+        image = validated_data.get('image', None)
+        if image:
+            serializer = ImageSerializer(instance.image, data=image)
+            if serializer.is_valid():
+                image = serializer.save()
+                instance.image = image
+            else:
+                print(serializer.errors)
+        instance.save()
+        return instance
+
+
+class SDMaleSerializer(serializers.ModelSerializer):
+    image = ImageSerializer(required=False)
+    text = TextSerializer(required=False)
+
+    class Meta:
+        model = SDMale
+        exclude = ('id',)
+
+    def create(self, validated_data):
+        text = validated_data.pop('text', None)
+        if text:
+            serializer = TextSerializer(data=text)
+            if serializer.is_valid():
+                text = serializer.save()
+            else:
+                print(serializer.errors)
+        image = validated_data.pop('image', None)
+        if image:
+            serializer = ImageSerializer(data=image)
+            if serializer.is_valid():
+                image = serializer.save()
+            else:
+                print(serializer.errors)
+        sdmale = SDMale.objects.create(text=text, image=image)
+        return sdmale
+
+    def update(self, instance, validated_data):
+        text = validated_data.get('text', None)
+        if text:
+            serializer = TextSerializer(instance.text, data=text)
+            if serializer.is_valid():
+                text = serializer.save()
+                instance.text = text
+            else:
+                print(serializer.errors)
+        image = validated_data.get('image', None)
+        if image:
+            serializer = ImageSerializer(instance.image, data=image)
+            if serializer.is_valid():
+                image = serializer.save()
+                instance.image = image
+            else:
+                print(serializer.errors)
+        instance.save()
+        return instance
+
+
+class SexualDifferentiationSerializer(serializers.ModelSerializer):
+    youth = SDYouthSerializer(required=False)
+    subadult = SDSubadultSerializer(required=False)
+    female = SDFemaleSerializer(required=False)
+    male = SDMaleSerializer(required=False)
+
+    class Meta:
+        model = SexualDifferentiation
+        exclude = ('id',)
+
+    def create(self, validated_data):
+        youth = validated_data.pop('youth', None)
+        if youth:
+            serializer = SDYouthSerializer(data=youth)
+            if serializer.is_valid():
+                youth = serializer.save()
+            else:
+                print(serializer.errors)
+        subadult = validated_data.pop('subadult', None)
+        if subadult:
+            serializer = SDSubadultSerializer(data=subadult)
+            if serializer.is_valid():
+                subadult = serializer.save()
+            else:
+                print(serializer.errors)
+        female = validated_data.pop('female', None)
+        if female:
+            serializer = SDFemaleSerializer(data=female)
+            if serializer.is_valid():
+                female = serializer.save()
+            else:
+                print(serializer.errors)
+        male = validated_data.pop('male', None)
+        if male:
+            serializer = SDMaleSerializer(data=male)
+            if serializer.is_valid():
+                male = serializer.save()
+            else:
+                print(serializer.errors)
+        sexual_diff = SexualDifferentiation.objects.create(youth=youth, subadult=subadult, female=female, male=male)
+        return sexual_diff
+
+    def update(self, instance, validated_data):
+        youth = validated_data.get('youth', None)
+        if youth:
+            serializer = SDYouthSerializer(instance.youth, data=youth)
+            if serializer.is_valid():
+                youth = serializer.save()
+                instance.youth = youth
+            else:
+                print(serializer.errors)
+        subadult = validated_data.get('subadult', None)
+        if subadult:
+            serializer = SDSubadultSerializer(instance.subadult, data=subadult)
+            if serializer.is_valid():
+                subadult = serializer.save()
+                instance.subadult = subadult
+            else:
+                print(serializer.errors)
+        female = validated_data.get('female', None)
+        if female:
+            serializer = SDFemaleSerializer(instance.female, data=female)
+            if serializer.is_valid():
+                female = serializer.save()
+                instance.female = female
+            else:
+                print(serializer.errors)
+        male = validated_data.get('male', None)
+        if male:
+            serializer = SDMaleSerializer(instance.male, data=male)
+            if serializer.is_valid():
+                male = serializer.save()
+                instance.male = male
+            else:
+                print(serializer.errors)
+        instance.save()
+        return instance
+
+
 class LengthSerializer(serializers.ModelSerializer):
     class Meta:
         model = Length
@@ -403,7 +723,9 @@ class LengthSerializer(serializers.ModelSerializer):
 
 
 class BirdSerializer(serializers.ModelSerializer):
-    common_names = TextSerializer(required=False, many=True)
+    common_names = CommonNameBirdSerializer(required=False, many=True)
+    # common_name_bird = CommonNameBirdSerializer(required=False, many=True)
+    scientific_names = ScientificNameBirdSerializer(required=False, many=True)
     images = ImageSerializer(many=True, required=False)
     videos = VideoSerializer(many=True, required=False)
     singing = AudioSerializer(many=True, required=False)
@@ -418,6 +740,7 @@ class BirdSerializer(serializers.ModelSerializer):
     behavior = TextSerializer(required=False)
     taxonomy = TextSerializer(required=False)
     conservation = ConservationSerializer(required=False)
+    sexual_differentiation = SexualDifferentiationSerializer(required=False)
     curiosities = TextSerializer(required=False)
     references = ReferenceSerializer(required=False, many=True)
     own_citation = ReferenceSerializer(required=False)
@@ -481,6 +804,13 @@ class BirdSerializer(serializers.ModelSerializer):
                 conservation = serializer.save()
             else:
                 print(serializer.errors)
+        sexual_differentiation = validated_data.pop('sexual_differentiation', None)
+        if sexual_differentiation:
+            serializer = SexualDifferentiationSerializer(data=sexual_differentiation)
+            if serializer.is_valid():
+                sexual_differentiation = serializer.save()
+            else:
+                print(serializer.errors)
         curiosities = validated_data.pop('curiosities', None)
         if curiosities:
             curiosities = Text.objects.create(**curiosities)
@@ -493,6 +823,7 @@ class BirdSerializer(serializers.ModelSerializer):
                 print(serializer.errors)
 
         common_names_data = validated_data.pop('common_names', [])
+        scientific_names_data = validated_data.pop('scientific_names', [])
         images_data = validated_data.pop('images', [])
         videos_data = validated_data.pop('videos', [])
         singing_data = validated_data.pop('singing', [])
@@ -500,18 +831,29 @@ class BirdSerializer(serializers.ModelSerializer):
         bird = Bird.objects.create(family=family, description=description, identification=identification,
                                    distribution=distribution, habitat=habitat, feeding=feeding,
                                    reproduction=reproduction, behavior=behavior, taxonomy=taxonomy,
-                                   conservation=conservation, curiosities=curiosities, own_citation=own_citation,
-                                   **validated_data)
+                                   conservation=conservation, sexual_differentiation=sexual_differentiation,
+                                   curiosities=curiosities, own_citation=own_citation, **validated_data)
 
         common_names = []
         for common_name in common_names_data:
-            serializer = TextSerializer(data=common_name)
+            main = 'main' in common_name and common_name.pop('main')
+            serializer = TextSerializer(data=common_name['name'])
             if serializer.is_valid():
-                c_n = serializer.save()
-                common_names.append(c_n)
+                name = serializer.save()
+                c_n = CommonNameBird.objects.create(bird=bird, name=name,
+                                                    main=main)
+                c_n.save()
             else:
                 print(serializer.errors)
-        bird.common_names.set(common_names)
+        scientific_names = []
+        for sci_name in scientific_names_data:
+            serializer = ScientificNameBirdSerializer(data=sci_name)
+            if serializer.is_valid():
+                c_n = serializer.save()
+                scientific_names.append(c_n)
+            else:
+                print(serializer.errors)
+        bird.scientific_names.set(scientific_names)
         images = []
         for image in images_data:
             serializer = ImageSerializer(data=image)
@@ -631,6 +973,14 @@ class BirdSerializer(serializers.ModelSerializer):
                 instance.conservation = conservation
             else:
                 print(serializer.errors)
+        sexual_differentiation = validated_data.pop('sexual_differentiation', None)
+        if sexual_differentiation:
+            serializer = SexualDifferentiationSerializer(instance.sexual_differentiation, data=conservation)
+            if serializer.is_valid():
+                sexual_differentiation = serializer.save()
+                instance.sexual_differentiation = sexual_differentiation
+            else:
+                print(serializer.errors)
         curiosities = validated_data.pop('curiosities', None)
         if curiosities:
             serializer = TextSerializer(instance.curiosities, data=curiosities)
@@ -652,13 +1002,24 @@ class BirdSerializer(serializers.ModelSerializer):
         common_names_data = validated_data.pop('common_names', [])
         common_names = []
         for common_name in common_names_data:
-            serializer = TextSerializer(data=common_name)
+            serializer = CommonNameBirdSerializer(data=common_name)
             if serializer.is_valid():
                 si = serializer.save()
                 common_names.append(si)
             else:
                 print(serializer.errors)
         instance.common_names.set(common_names)
+        instance.scientific_names.all().delete()
+        scientific_names_data = validated_data.pop('scientific_names', [])
+        scientific_names = []
+        for sci_name in scientific_names_data:
+            serializer = ScientificNameBirdSerializer(data=sci_name)
+            if serializer.is_valid():
+                si = serializer.save()
+                scientific_names.append(si)
+            else:
+                print(serializer.errors)
+        instance.scientific_names.set(scientific_names)
         instance.images.all().delete()
         images_data = validated_data.pop('images', [])
         images = []
@@ -703,9 +1064,5 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         instance.singing.set(singing)
-        instance.scientific_name = validated_data.get('scientific_name', None)
         instance.save()
         return instance
-
-
-

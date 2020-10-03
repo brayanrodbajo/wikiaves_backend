@@ -17,17 +17,17 @@ class ReferenceAdmin(admin.ModelAdmin):
 
 @admin.register(Author)
 class AuthorAdmin(admin.ModelAdmin):
-    list_display = ('name', 'last_name', 'reference')
+    list_display = ('name', 'last_name', 'reference', 'image', 'url', 'description')
 
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('scientific_name',)
+    list_display = ('id',)
 
 
 @admin.register(Family)
 class FamilyAdmin(admin.ModelAdmin):
-    list_display = ('scientific_name', 'order')
+    list_display = ('id', 'order')
 
 
 @admin.register(Identification)
@@ -57,7 +57,7 @@ class ConservationAdmin(admin.ModelAdmin):
 
 @admin.register(Bird)
 class BirdAdmin(admin.ModelAdmin):
-    list_display = ('scientific_name', 'family', 'description', 'identification', 'distribution',
+    list_display = ('id', 'family', 'description', 'identification', 'distribution',
                     'habitat', 'feeding', 'reproduction', 'behavior', 'taxonomy', 'conservation', 'curiosities',
                     'own_citation', 'last_updated',)
 
