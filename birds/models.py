@@ -129,7 +129,7 @@ class Bird(models.Model):
     references = models.ManyToManyField(Reference, through='ReferencesBird', related_name='bird_refs')
     own_citation = models.ForeignKey(Reference, related_name='bird', null=True, on_delete=models.SET_NULL)
     last_updated = models.DateTimeField(auto_now=True)
-    identification_similar = models.ForeignKey(Identification, null=True, on_delete=models.SET_NULL,
+    similar_species = models.ManyToManyField('self', null=True, on_delete=models.SET_NULL,
                                         related_name='similar_species')
 
 
@@ -216,7 +216,14 @@ class Measure(models.Model):
         ('in', IN),
         ('gr', GR),
     )
-    value = models.FloatField()
+    LENGTH = 'length'
+    WEIGHT = 'weight'
+    NAME_CHOICES = (
+        ('length', LENGTH),
+        ('weight', WEIGHT)
+    )
+    value = models.ForeignKey(Value, null=True, related_name='measure', on_delete=models.SET_NULL)
+    name = models.CharField(max_length=6, choices=NAME_CHOICES)
     unit = models.CharField(max_length=2, choices=UNIT_CHOICES)
     identification_lengths = models.ForeignKey(Identification, related_name='lengths', null=True,
                                                on_delete=models.SET_NULL)
