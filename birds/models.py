@@ -123,10 +123,11 @@ class Bird(models.Model):
     habitat = models.ForeignKey(Text, related_name='bird', null=True, on_delete=models.SET_NULL)
     reproduction = models.ForeignKey(Reproduction, related_name='bird', null=True, on_delete=models.SET_NULL)
     taxonomy = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='birds_tax')
-    conservation = models.ForeignKey(Type, related_name='bird', null=True, on_delete=models.SET_NULL)
+    conservation = models.ForeignKey(Type, related_name='bird_conservation', null=True, on_delete=models.SET_NULL)
     # sexual_differentiation = models.ForeignKey(SexualDifferentiation, related_name='bird', null=True,
     #                                            on_delete=models.SET_NULL)
     references = models.ManyToManyField(Reference, through='ReferencesBird', related_name='bird_refs')
+    migration = models.ForeignKey(Type, related_name='bird_migration', null=True, on_delete=models.SET_NULL)
     own_citation = models.ForeignKey(Reference, related_name='bird', null=True, on_delete=models.SET_NULL)
     last_updated = models.DateTimeField(auto_now=True)
     similar_species = models.ManyToManyField('self', null=True, on_delete=models.SET_NULL,
@@ -140,7 +141,7 @@ class ReferencesBird(models.Model):
 
 class Subspecies(models.Model):
     distribution = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='subspecies_dist')
-    bird = models.ForeignKey(Bird, related_name='subspecies_bird', null=True, on_delete=models.SET_NULL)
+    bird = models.ForeignKey(Bird, related_name='subspecies', null=True, on_delete=models.SET_NULL)
 
 
 class SubspeciesName(models.Model):
