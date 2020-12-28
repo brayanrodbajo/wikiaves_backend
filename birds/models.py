@@ -131,7 +131,7 @@ class Bird(models.Model):
     own_citation = models.ForeignKey(Reference, related_name='bird', null=True, on_delete=models.SET_NULL)
     last_updated = models.DateTimeField(auto_now=True)
     similar_species = models.ManyToManyField('self', null=True, on_delete=models.SET_NULL,
-                                        related_name='similar_species')
+                                             related_name='similar_species')
 
 
 class ReferencesBird(models.Model):
