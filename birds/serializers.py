@@ -16,6 +16,9 @@ class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
         exclude = ('id')
+        extra_kwargs = {
+            'url': {'validators': []},
+        }
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -227,7 +230,7 @@ class TypeSerializer(serializers.ModelSerializer):
                 text = serializer.save()
             else:
                 print(serializer.errors)
-        type = Identification.objects.create(name=name, image=image, text=text)
+        type = Type.objects.create(name=name, image=image, text=text)
         return type
 
     def update(self, instance, validated_data):
@@ -505,6 +508,9 @@ class BirdImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = BirdImage
         exclude = ('id', 'bird')
+        extra_kwargs = {
+            'url': {'validators': []},
+        }
 
     def create(self, validated_data):
         author = validated_data.pop('author', None)
@@ -536,6 +542,9 @@ class VideoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Video
         exclude = ('id', 'bird')
+        extra_kwargs = {
+            'url': {'validators': []},
+        }
 
 
 class AudioSerializer(serializers.ModelSerializer):
@@ -544,6 +553,9 @@ class AudioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Audio
         exclude = ('id', 'bird')
+        extra_kwargs = {
+            'url': {'validators': []},
+        }
 
     def create(self, validated_data):
         author = validated_data.pop('author', None)
@@ -682,6 +694,10 @@ class BirdSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bird
         fields = '__all__'
+
+    def get_fields(self):
+        fields = super(BirdSerializer, self).get_fields()
+        return fields
 
     def create(self, validated_data):
         family = validated_data.pop('family', None)

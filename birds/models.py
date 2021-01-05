@@ -130,8 +130,7 @@ class Bird(models.Model):
     migration = models.ForeignKey(Type, related_name='bird_migration', null=True, on_delete=models.SET_NULL)
     own_citation = models.ForeignKey(Reference, related_name='bird', null=True, on_delete=models.SET_NULL)
     last_updated = models.DateTimeField(auto_now=True)
-    similar_species = models.ManyToManyField('self', null=True, on_delete=models.SET_NULL,
-                                             related_name='similar_species')
+    similar_species = models.ManyToManyField('self', blank=True)
 
 
 class ReferencesBird(models.Model):
