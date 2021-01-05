@@ -955,7 +955,7 @@ class BirdSerializer(serializers.ModelSerializer):
         common_names_data = validated_data.pop('common_names', [])
         common_names = []
         for com_name in common_names_data:
-            serializer = ScientificNameBirdSerializer(data=com_name)
+            serializer = CommonNameBirdSerializer(data=com_name)
             if serializer.is_valid():
                 obj = serializer.save()
                 common_names.append(obj)

@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from birds.models import Text, Reference, Author, Order, Family, Identification, Reproduction, \
-    Bird, Image, Video, Audio, Value, Type, Subspecies, SubspeciesName, BirdImage, Measure
+    Bird, Image, Video, Audio, Value, Type, Subspecies, SubspeciesName, BirdImage, Measure, CommonNameBird
 
 
 @admin.register(Text)
@@ -50,11 +50,16 @@ class ReproductionAdmin(admin.ModelAdmin):
     list_display = ('text',)
 
 
+class CNInlineAdmin(admin.TabularInline):
+    model = CommonNameBird
+
+
 @admin.register(Bird)
 class BirdAdmin(admin.ModelAdmin):
     list_display = ('id', 'family', 'description', 'identification', 'habitat',
                     'reproduction', 'taxonomy', 'conservation',
                     'own_citation', 'last_updated',)
+    inlines = [CNInlineAdmin]
 
 
 @admin.register(Subspecies)
