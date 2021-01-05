@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from birds.models import Text, Reference, Author, Order, Family, Identification, Habitat, Feeding, Reproduction, \
-    Conservation, Bird, Image, Video, Audio, Length
+from birds.models import Text, Reference, Author, Order, Family, Identification, Reproduction, \
+    Bird, Image, Video, Audio, Value, Type, Subspecies, SubspeciesName, BirdImage, Measure, CommonNameBird
 
 
 @admin.register(Text)
@@ -17,53 +17,68 @@ class ReferenceAdmin(admin.ModelAdmin):
 
 @admin.register(Author)
 class AuthorAdmin(admin.ModelAdmin):
-    list_display = ('name', 'last_name', 'reference')
+    list_display = ('name', 'last_name', 'reference', 'image', 'url', 'description')
 
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('scientific_name',)
+    list_display = ('id',)
 
 
 @admin.register(Family)
 class FamilyAdmin(admin.ModelAdmin):
-    list_display = ('scientific_name', 'order')
+    list_display = ('id', 'order')
+
+
+@admin.register(Value)
+class ValueAdmin(admin.ModelAdmin):
+    list_display = ('inferior', 'superior', 'average')
 
 
 @admin.register(Identification)
 class IdentificationAdmin(admin.ModelAdmin):
-    list_display = ('size_shape', 'similar_species', 'regional_differences')
+    list_display = ('description',)
 
 
-@admin.register(Habitat)
+@admin.register(Type)
 class HabitatAdmin(admin.ModelAdmin):
-    list_display = ('type', 'text')
-
-
-@admin.register(Feeding)
-class FeedingAdmin(admin.ModelAdmin):
-    list_display = ('type', 'text')
+    list_display = ('name', 'image', 'text')
 
 
 @admin.register(Reproduction)
 class ReproductionAdmin(admin.ModelAdmin):
-    list_display = ('type', 'text')
+    list_display = ('text',)
 
 
-@admin.register(Conservation)
-class ConservationAdmin(admin.ModelAdmin):
-    list_display = ('type', 'text')
+class CNInlineAdmin(admin.TabularInline):
+    model = CommonNameBird
 
 
 @admin.register(Bird)
 class BirdAdmin(admin.ModelAdmin):
-    list_display = ('scientific_name', 'family', 'description', 'identification', 'distribution',
-                    'habitat', 'feeding', 'reproduction', 'behavior', 'taxonomy', 'conservation', 'curiosities',
+    list_display = ('id', 'family', 'description', 'identification', 'habitat',
+                    'reproduction', 'taxonomy', 'conservation',
                     'own_citation', 'last_updated',)
+    inlines = [CNInlineAdmin]
+
+
+@admin.register(Subspecies)
+class SubspeciesAdmin(admin.ModelAdmin):
+    list_display = ('distribution',)
+
+
+@admin.register(SubspeciesName)
+class SubspeciesNameAdmin(admin.ModelAdmin):
+    list_display = ('name','main')
 
 
 @admin.register(Image)
 class ImageAdmin(admin.ModelAdmin):
+    list_display = ('thumbnail', 'format', 'height', 'width', 'url')
+
+
+@admin.register(BirdImage)
+class BirdImageAdmin(admin.ModelAdmin):
     list_display = ('url', 'thumbnail', 'category', 'format', 'location', 'height', 'width', 'bird')
 
 
@@ -77,6 +92,6 @@ class AudioAdmin(admin.ModelAdmin):
     list_display = ('url', 'author', 'format', 'location', 'bird')
 
 
-@admin.register(Length)
+@admin.register(Measure)
 class LengthAdmin(admin.ModelAdmin):
-    list_display = ('length', 'unit', 'bird')
+    list_display = ('value', 'unit', 'identification_lengths', 'identification_weights')

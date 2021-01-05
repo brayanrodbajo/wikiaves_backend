@@ -1,7 +1,9 @@
 from rest_framework import serializers
+from rest_framework.relations import PrimaryKeyRelatedField
 
-from birds.models import Bird, Text, Family, Identification, Habitat, Feeding, Reproduction, Conservation, Reference, \
-    Author, Image, Video, Audio, Length, Order
+from birds.models import Text, Author, Image, ScientificNameOrder, ScientificNameFamily, CommonNameBird, \
+    ScientificNameBird, Order, Family, Identification, Type, Measure, Value, Reproduction, Reference, Bird, Video, \
+    BirdImage, Audio, Subspecies, SubspeciesName
 
 
 class TextSerializer(serializers.ModelSerializer):
@@ -10,52 +12,142 @@ class TextSerializer(serializers.ModelSerializer):
         exclude = ('id',)
 
 
+class ImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Image
+        exclude = ('id')
+        extra_kwargs = {
+            'url': {'validators': []},
+        }
+
+
 class AuthorSerializer(serializers.ModelSerializer):
+    image = ImageSerializer(required=False)
+
     class Meta:
         model = Author
         exclude = ('id', 'reference')
 
+    def create(self, validated_data):
+        image = validated_data.pop('image', None)
+        if image:
+            serializer = ImageSerializer(data=image)
+            if serializer.is_valid():
+                image = serializer.save()
+            else:
+                print(serializer.errors)
+        author = Author.objects.create(image=image, **validated_data)
+        return author
+
+    def update(self, instance, validated_data):
+        image = validated_data.get('image', None)
+        if image:
+            serializer = ImageSerializer(instance.image, data=image)
+            if serializer.is_valid():
+                image = serializer.save()
+                instance.image = image
+            else:
+                print(serializer.errors)
+        instance.name = validated_data.get('name', None)
+        instance.last_name = validated_data.get('last_name', None)
+        instance.url = validated_data.get('url', None)
+        instance.description = validated_data.get('description', None)
+        instance.save()
+        return instance
+
+
+class ScientificNameOrderSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ScientificNameOrder
+        fields = ('name', 'main')
+
+
+class ScientificNameFamilySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ScientificNameFamily
+        fields = ('name', 'main')
+
+
+class CommonNameBirdSerializer(serializers.ModelSerializer):
+    name = TextSerializer(required=False)
+
+    class Meta:
+        model = CommonNameBird
+        fields = ('name', 'main')
+
+    def create(self, validated_data):
+        name = validated_data.pop('name', None)
+        if name:
+            serializer = TextSerializer(data=name)
+            if serializer.is_valid():
+                name = serializer.save()
+            else:
+                print(serializer.errors)
+        c_n = CommonNameBird.objects.create(name=name, **validated_data)
+        return c_n
+
+    def update(self, instance, validated_data):
+        name = validated_data.get('name', None)
+        if name:
+            serializer = TextSerializer(instance.name, data=name)
+            if serializer.is_valid():
+                name = serializer.save()
+                instance.name = name
+            else:
+                print(serializer.errors)
+        instance.main = validated_data.get('main', None)
+        instance.save()
+        return instance
+
+
+class ScientificNameBirdSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ScientificNameBird
+        fields = ('name', 'main')
+
 
 class OrderSerializer(serializers.ModelSerializer):
-    common_names = TextSerializer(required=False, many=True)
+    scientific_names = ScientificNameOrderSerializer(required=False, many=True)
 
     class Meta:
         model = Order
         exclude = ('id',)
 
     def create(self, validated_data):
-        common_names_data = validated_data.pop('common_names', [])
+        scientific_names_data = validated_data.pop('scientific_names', [])
         order = Order.objects.create(**validated_data)
-        common_names = []
-        for common_name in common_names_data:
-            serializer = TextSerializer(data=common_name)
+        scientific_names = []
+        for scientific_name in scientific_names_data:
+            serializer = ScientificNameOrderSerializer(data=scientific_name)
             if serializer.is_valid():
                 c_n = serializer.save()
-                common_names.append(c_n)
+                scientific_names.append(c_n)
             else:
                 print(serializer.errors)
-        order.common_names.set(common_names)
+        order.scientific_names.set(scientific_names)
         return order
 
     def update(self, instance, validated_data):
-        common_names_data = validated_data.get('common_names', [])
-        common_names = []
-        instance.common_names.all().delete()
-        for common_name in common_names_data:
-            serializer = TextSerializer(data=common_name)
+        scientific_names_data = validated_data.get('scientific_names', [])
+        scientific_names = []
+        instance.scientific_names.all().delete()
+        for scientific_name in scientific_names_data:
+            serializer = ScientificNameOrderSerializer(data=scientific_name)
             if serializer.is_valid():
                 c_n = serializer.save()
-                common_names.append(c_n)
+                scientific_names.append(c_n)
             else:
                 print(serializer.errors)
-        instance.common_names.set(common_names)
-        instance.scientific_name = validated_data.get('scientific_name', None)
+        instance.scientific_names.set(scientific_names)
         instance.save()
         return instance
 
 
 class FamilySerializer(serializers.ModelSerializer):
-    common_names = TextSerializer(required=False, many=True)
+    scientific_names = ScientificNameFamilySerializer(required=False, many=True)
     order = OrderSerializer(required=False)
 
     class Meta:
@@ -70,17 +162,17 @@ class FamilySerializer(serializers.ModelSerializer):
                 order = serializer.save()
             else:
                 print(serializer.errors)
-        common_names_data = validated_data.pop('common_names', [])
+        scientific_names_data = validated_data.pop('scientific_names', [])
         family = Family.objects.create(order=order, **validated_data)
-        common_names = []
-        for common_name in common_names_data:
-            serializer = TextSerializer(data=common_name)
+        scientific_names = []
+        for scientific_name in scientific_names_data:
+            serializer = ScientificNameFamilySerializer(data=scientific_name)
             if serializer.is_valid():
                 c_n = serializer.save()
-                common_names.append(c_n)
+                scientific_names.append(c_n)
             else:
                 print(serializer.errors)
-        family.common_names.set(common_names)
+        family.scientific_names.set(scientific_names)
         return family
 
     def update(self, instance, validated_data):
@@ -92,151 +184,223 @@ class FamilySerializer(serializers.ModelSerializer):
                 instance.order = order
             else:
                 print(serializer.errors)
-        common_names_data = validated_data.get('common_names', [])
-        common_names = []
-        instance.common_names.all().delete()
-        for common_name in common_names_data:
-            serializer = TextSerializer(data=common_name)
+        scientific_names_data = validated_data.get('scientific_names', [])
+        scientific_names = []
+        instance.scientific_names.all().delete()
+        for scientific_name in scientific_names_data:
+            serializer = ScientificNameFamilySerializer(data=scientific_name)
             if serializer.is_valid():
                 c_n = serializer.save()
-                common_names.append(c_n)
+                scientific_names.append(c_n)
             else:
                 print(serializer.errors)
-        instance.common_names.set(common_names)
-        instance.scientific_name = validated_data.get('scientific_name', None)
+        instance.scientific_names.set(scientific_names)
+        instance.save()
+        return instance
+
+
+class TypeSerializer(serializers.ModelSerializer):
+    name = TextSerializer(required=False)
+    image = ImageSerializer(required=False)
+    text = TextSerializer(required=False)
+
+    class Meta:
+        model = Type
+        exclude = ('id', 'identification', 'bird_feeding', 'reproduction', 'bird_behavior')
+
+    def create(self, validated_data):
+        name = validated_data.pop('name', None)
+        image = validated_data.pop('image', None)
+        text = validated_data.pop('text', None)
+        if name:
+            serializer = TextSerializer(data=name)
+            if serializer.is_valid():
+                name = serializer.save()
+            else:
+                print(serializer.errors)
+        if image:
+            serializer = ImageSerializer(data=image)
+            if serializer.is_valid():
+                image = serializer.save()
+            else:
+                print(serializer.errors)
+        if text:
+            serializer = TextSerializer(data=text)
+            if serializer.is_valid():
+                text = serializer.save()
+            else:
+                print(serializer.errors)
+        type = Type.objects.create(name=name, image=image, text=text)
+        return type
+
+    def update(self, instance, validated_data):
+        name = validated_data.get('name', None)
+        if name:
+            serializer = TextSerializer(instance.name, data=name)
+            if serializer.is_valid():
+                name = serializer.save()
+                instance.name = name
+            else:
+                print(serializer.errors)
+        image = validated_data.get('image', None)
+        if image:
+            serializer = ImageSerializer(instance.image, data=image)
+            if serializer.is_valid():
+                image = serializer.save()
+                instance.text = image
+            else:
+                print(serializer.errors)
+        text = validated_data.get('text', None)
+        if text:
+            serializer = TextSerializer(instance.text, data=text)
+            if serializer.is_valid():
+                text = serializer.save()
+                instance.text = text
+            else:
+                print(serializer.errors)
+        instance.save()
+        return instance
+
+
+class ValueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Value
+        exclude = ('id',)
+
+
+class MeasureSerializer(serializers.ModelSerializer):
+    value = ValueSerializer(required=False)
+
+    class Meta:
+        model = Measure
+        fields = ('value', 'unit', 'name')
+
+    def create(self, validated_data):
+        value = validated_data.pop('value', None)
+        if value:
+            serializer = ValueSerializer(data=value)
+            if serializer.is_valid():
+                value = serializer.save()
+            else:
+                print(serializer.errors)
+        measure = Measure.objects.create(value=value, **validated_data)
+        return measure
+
+    def update(self, instance, validated_data):
+        value = validated_data.get('value', None)
+        if value:
+            serializer = ValueSerializer(instance.value, data=value)
+            if serializer.is_valid():
+                value = serializer.save()
+                instance.value = value
+            else:
+                print(serializer.errors)
+        instance.name = validated_data.get('name', None)
+        instance.unit = validated_data.get('unit', None)
         instance.save()
         return instance
 
 
 class IdentificationSerializer(serializers.ModelSerializer):
-    size_shape = TextSerializer(required=False)
-    similar_species = TextSerializer(required=False)
-    regional_differences = TextSerializer(required=False)
+    description = TextSerializer(required=False)
+    plumage = TypeSerializer(required=False, many=True)
+    lengths = MeasureSerializer(required=False, many=True)
+    weights = MeasureSerializer(required=False, many=True)
 
     class Meta:
         model = Identification
         exclude = ('id',)
 
     def create(self, validated_data):
-        size_shape = validated_data.pop('size_shape', None)
-        if size_shape:
-            serializer = TextSerializer(data=size_shape)
+        description = validated_data.pop('description', None)
+        plumage_data = validated_data.pop('plumage', [])
+        lengths_data = validated_data.pop('lengths', [])
+        weights_data = validated_data.pop('weights', [])
+        if description:
+            serializer = TextSerializer(data=description)
             if serializer.is_valid():
-                size_shape = serializer.save()
+                description = serializer.save()
             else:
                 print(serializer.errors)
-        similar_species = validated_data.pop('similar_species', None)
-        if similar_species:
-            serializer = TextSerializer(data=similar_species)
+        identification = Identification.objects.create(description=description, **validated_data)
+        plumage = []
+        for plum in plumage_data:
+            serializer = TypeSerializer(data=plum)
             if serializer.is_valid():
-                similar_species = serializer.save()
+                obj = serializer.save()
+                plumage.append(obj)
             else:
                 print(serializer.errors)
-        regional_differences = validated_data.pop('regional_differences', None)
-        if regional_differences:
-            serializer = TextSerializer(data=regional_differences)
+        identification.plumage.set(plumage)
+        lengths = []
+        for len in lengths_data:
+            serializer = MeasureSerializer(data=len)
             if serializer.is_valid():
-                regional_differences = serializer.save()
+                obj = serializer.save()
+                lengths.append(obj)
             else:
                 print(serializer.errors)
-        identification = Identification.objects.create(size_shape=size_shape, similar_species=similar_species, regional_differences=regional_differences)
+        identification.lengths.set(lengths)
+        weights = []
+        for wei in weights_data:
+            serializer = MeasureSerializer(data=wei)
+            if serializer.is_valid():
+                obj = serializer.save()
+                weights.append(obj)
+            else:
+                print(serializer.errors)
+        identification.weights.set(weights)
         return identification
 
     def update(self, instance, validated_data):
-        size_shape = validated_data.get('size_shape', None)
-        if size_shape:
-            serializer = TextSerializer(instance.size_shape, data=size_shape)
+        plumage_data = validated_data.pop('plumage', [])
+        plumage = []
+        instance.plumage.all().delete()
+        for plum in plumage_data:
+            serializer = AuthorSerializer(data=plum)
             if serializer.is_valid():
-                size_shape = serializer.save()
-                instance.size_shape = size_shape
+                obj = serializer.save()
+                plumage.append(obj)
             else:
                 print(serializer.errors)
-        similar_species = validated_data.get('similar_species', None)
-        if similar_species:
-            serializer = TextSerializer(instance.similar_species, data=similar_species)
+        instance.plumage.set(plumage)
+        lengths_data = validated_data.pop('lengths', [])
+        lengths = []
+        instance.lengths.all().delete()
+        for len in lengths_data:
+            serializer = MeasureSerializer(data=len)
             if serializer.is_valid():
-                similar_species = serializer.save()
-                instance.similar_species = similar_species
+                obj = serializer.save()
+                lengths.append(obj)
             else:
                 print(serializer.errors)
-        regional_differences = validated_data.get('regional_differences', None)
-        if regional_differences:
-            serializer = TextSerializer(instance.regional_differences, data=regional_differences)
+        instance.lengths.set(lengths)
+        weights_data = validated_data.pop('weights', [])
+        weights = []
+        instance.weights.all().delete()
+        for wei in weights_data:
+            serializer = MeasureSerializer(data=wei)
             if serializer.is_valid():
-                regional_differences = serializer.save()
-                instance.regional_differences = regional_differences
+                obj = serializer.save()
+                weights.append(obj)
             else:
                 print(serializer.errors)
-        instance.save()
-        return instance
-
-
-class HabitatSerializer(serializers.ModelSerializer):
-    text = TextSerializer(required=False)
-
-    class Meta:
-        model = Habitat
-        exclude = ('id',)
-
-    def create(self, validated_data):
-        text = validated_data.pop('text', None)
-        if text:
-            serializer = TextSerializer(data=text)
+        instance.weights.set(weights)
+        description = validated_data.get('description', None)
+        if description:
+            serializer = TextSerializer(instance.text, data=description)
             if serializer.is_valid():
-                text = serializer.save()
+                description = serializer.save()
+                instance.text = description
             else:
                 print(serializer.errors)
-        habitat = Habitat.objects.create(text=text, **validated_data)
-        return habitat
-
-    def update(self, instance, validated_data):
-        text = validated_data.get('text', None)
-        if text:
-            serializer = TextSerializer(instance.text, data=text)
-            if serializer.is_valid():
-                text = serializer.save()
-                instance.text = text
-            else:
-                print(serializer.errors)
-        instance.type = validated_data.get('type', None)
-        instance.save()
-        return instance
-
-
-class FeedingSerializer(serializers.ModelSerializer):
-    text = TextSerializer(required=False)
-
-    class Meta:
-        model = Feeding
-        exclude = ('id',)
-
-    def create(self, validated_data):
-        text = validated_data.pop('text', None)
-        if text:
-            serializer = TextSerializer(data=text)
-            if serializer.is_valid():
-                text = serializer.save()
-            else:
-                print(serializer.errors)
-        feeding = Feeding.objects.create(text=text, **validated_data)
-        return feeding
-
-    def update(self, instance, validated_data):
-        text = validated_data.get('text', None)
-        if text:
-            serializer = TextSerializer(instance.text, data=text)
-            if serializer.is_valid():
-                text = serializer.save()
-                instance.text = text
-            else:
-                print(serializer.errors)
-        instance.type = validated_data.get('type', None)
         instance.save()
         return instance
 
 
 class ReproductionSerializer(serializers.ModelSerializer):
     text = TextSerializer(required=False)
+    types = TypeSerializer(required=False, many=True)
 
     class Meta:
         model = Reproduction
@@ -244,6 +408,7 @@ class ReproductionSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         text = validated_data.pop('text', None)
+        types_data = validated_data.pop('types', [])
         if text:
             serializer = TextSerializer(data=text)
             if serializer.is_valid():
@@ -251,6 +416,15 @@ class ReproductionSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         reproduction = Reproduction.objects.create(text=text, **validated_data)
+        types = []
+        for len in types_data:
+            serializer = TypeSerializer(data=len)
+            if serializer.is_valid():
+                obj = serializer.save()
+                types.append(obj)
+            else:
+                print(serializer.errors)
+        reproduction.types.set(types)
         return reproduction
 
     def update(self, instance, validated_data):
@@ -262,39 +436,17 @@ class ReproductionSerializer(serializers.ModelSerializer):
                 instance.text = text
             else:
                 print(serializer.errors)
-        instance.type = validated_data.get('type', None)
-        instance.save()
-        return instance
-
-
-class ConservationSerializer(serializers.ModelSerializer):
-    text = TextSerializer(required=False)
-
-    class Meta:
-        model = Conservation
-        exclude = ('id',)
-
-    def create(self, validated_data):
-        text = validated_data.pop('text', None)
-        if text:
-            serializer = TextSerializer(data=text)
+        types_data = validated_data.get('types', [])
+        types = []
+        instance.types.all().delete()
+        for type in types_data:
+            serializer = TypeSerializer(data=type)
             if serializer.is_valid():
-                text = serializer.save()
+                obj = serializer.save()
+                types.append(obj)
             else:
                 print(serializer.errors)
-        conservation = Conservation.objects.create(text=text, **validated_data)
-        return conservation
-
-    def update(self, instance, validated_data):
-        text = validated_data.get('text', None)
-        if text:
-            serializer = TextSerializer(instance.text, data=text)
-            if serializer.is_valid():
-                text = serializer.save()
-                instance.text = text
-            else:
-                print(serializer.errors)
-        instance.type = validated_data.get('type', None)
+        instance.types.set(types)
         instance.save()
         return instance
 
@@ -308,7 +460,7 @@ class ReferenceSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         authors_data = validated_data.pop('authors', [])
-        reference = Bird.objects.create(**validated_data)
+        reference = Reference.objects.create(**validated_data)
         authors = []
         for author in authors_data:
             serializer = AuthorSerializer(data=author)
@@ -323,7 +475,7 @@ class ReferenceSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         authors_data = validated_data.pop('authors', [])
         authors = []
-        instance.author.all().delete()
+        instance.authors.all().delete()
         for author in authors_data:
             serializer = AuthorSerializer(data=author)
             if serializer.is_valid():
@@ -350,16 +502,49 @@ class ReferenceSerializer(serializers.ModelSerializer):
         return instance
 
 
-class ImageSerializer(serializers.ModelSerializer):
+class BirdImageSerializer(serializers.ModelSerializer):
+    author = AuthorSerializer(required=False)
+
     class Meta:
-        model = Image
+        model = BirdImage
         exclude = ('id', 'bird')
+        extra_kwargs = {
+            'url': {'validators': []},
+        }
+
+    def create(self, validated_data):
+        author = validated_data.pop('author', None)
+        if author:
+            serializer = AuthorSerializer(data=author)
+            if serializer.is_valid():
+                author = serializer.save()
+            else:
+                print(serializer.errors)
+        image = BirdImage.objects.create(author=author, **validated_data)
+        return image
+
+    def update(self, instance, validated_data):
+        author = validated_data.get('author', None)
+        if author:
+            serializer = AuthorSerializer(instance.author, data=author)
+            if serializer.is_valid():
+                author = serializer.save()
+                instance.author = author
+            else:
+                print(serializer.errors)
+        instance.category = validated_data.get('category', None)
+        instance.location = validated_data.get('location', None)
+        instance.save()
+        return instance
 
 
 class VideoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Video
         exclude = ('id', 'bird')
+        extra_kwargs = {
+            'url': {'validators': []},
+        }
 
 
 class AudioSerializer(serializers.ModelSerializer):
@@ -368,11 +553,14 @@ class AudioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Audio
         exclude = ('id', 'bird')
+        extra_kwargs = {
+            'url': {'validators': []},
+        }
 
     def create(self, validated_data):
         author = validated_data.pop('author', None)
         if author:
-            serializer = ReferenceSerializer(data=author)
+            serializer = AuthorSerializer(data=author)
             if serializer.is_valid():
                 author = serializer.save()
             else:
@@ -396,35 +584,120 @@ class AudioSerializer(serializers.ModelSerializer):
         return instance
 
 
-class LengthSerializer(serializers.ModelSerializer):
+class SubspeciesNameSerializer(serializers.ModelSerializer):
+    name = TextSerializer(required=False)
+
     class Meta:
-        model = Length
-        exclude = ('id', 'bird')
+        model = SubspeciesName
+        fields = ('name', 'main')
+
+    def create(self, validated_data):
+        name = validated_data.pop('name', None)
+        if name:
+            serializer = TextSerializer(data=name)
+            if serializer.is_valid():
+                name = serializer.save()
+            else:
+                print(serializer.errors)
+        subspecies_name = SubspeciesName.objects.create(name=name, **validated_data)
+        return subspecies_name
+
+    def update(self, instance, validated_data):
+        name = validated_data.get('name', None)
+        if name:
+            serializer = TextSerializer(instance.name, data=name)
+            if serializer.is_valid():
+                name = serializer.save()
+                instance.name = name
+            else:
+                print(serializer.errors)
+        instance.main = validated_data.get('main', None)
+        instance.save()
+        return instance
+
+
+class SubspeciesSerializer(serializers.ModelSerializer):
+    names = SubspeciesNameSerializer(required=False, many=True)
+    distribution = TextSerializer(required=False)
+
+    class Meta:
+        model = Subspecies
+        fields = ('names', 'distribution')
+
+    def create(self, validated_data):
+        distribution = validated_data.pop('distribution', None)
+        if distribution:
+            serializer = TextSerializer(data=distribution)
+            if serializer.is_valid():
+                distribution = serializer.save()
+            else:
+                print(serializer.errors)
+        names_data = validated_data.pop('names', [])
+        subspecies = Subspecies.objects.create(distribution=distribution)
+        names = []
+        for name in names_data:
+            serializer = SubspeciesNameSerializer(data=name)
+            if serializer.is_valid():
+                obj = serializer.save()
+                names.append(obj)
+            else:
+                print(serializer.errors)
+        subspecies.names.set(names)
+        return subspecies
+
+    def update(self, instance, validated_data):
+        distribution = validated_data.get('distribution', None)
+        if distribution:
+            serializer = TextSerializer(instance.distribution, data=distribution)
+            if serializer.is_valid():
+                distribution = serializer.save()
+                instance.distribution = distribution
+            else:
+                print(serializer.errors)
+        names_data = validated_data.get('names', [])
+        names = []
+        instance.names.all().delete()
+        for name in names_data:
+            serializer = SubspeciesNameSerializer(data=name)
+            if serializer.is_valid():
+                obj = serializer.save()
+                names.append(obj)
+            else:
+                print(serializer.errors)
+        instance.names.set(names)
+        instance.save()
+        return instance
 
 
 class BirdSerializer(serializers.ModelSerializer):
-    common_names = TextSerializer(required=False, many=True)
-    images = ImageSerializer(many=True, required=False)
+    subspecies = SubspeciesSerializer(required=False, many=True)
+    common_names = CommonNameBirdSerializer(required=False, many=True)
+    scientific_names = ScientificNameBirdSerializer(required=False, many=True)
+    images = BirdImageSerializer(many=True, required=False)
     videos = VideoSerializer(many=True, required=False)
     singing = AudioSerializer(many=True, required=False)
-    heights = LengthSerializer(many=True, required=False)
     family = FamilySerializer(required=False)
     description = TextSerializer(required=False)
     identification = IdentificationSerializer(required=False)
     distribution = TextSerializer(required=False)
-    habitat = HabitatSerializer(required=False)
-    feeding = FeedingSerializer(required=False)
+    migration = TypeSerializer(required=False)
+    habitat = TextSerializer(required=False)
+    feeding = TypeSerializer(many=True, required=False)
     reproduction = ReproductionSerializer(required=False)
-    behavior = TextSerializer(required=False)
+    behavior = TypeSerializer(many=True, required=False)
     taxonomy = TextSerializer(required=False)
-    conservation = ConservationSerializer(required=False)
-    curiosities = TextSerializer(required=False)
+    conservation = TypeSerializer(required=False)
+    similar_species = PrimaryKeyRelatedField(many=True, queryset=Bird.objects.all())
     references = ReferenceSerializer(required=False, many=True)
     own_citation = ReferenceSerializer(required=False)
 
     class Meta:
         model = Bird
         fields = '__all__'
+
+    def get_fields(self):
+        fields = super(BirdSerializer, self).get_fields()
+        return fields
 
     def create(self, validated_data):
         family = validated_data.pop('family', None)
@@ -447,20 +720,16 @@ class BirdSerializer(serializers.ModelSerializer):
         distribution = validated_data.pop('distribution', None)
         if distribution:
             distribution = Text.objects.create(**distribution)
+        migration = validated_data.pop('migration', None)
+        if migration:
+            serializer = TypeSerializer(data=migration)
+            if serializer.is_valid():
+                migration = serializer.save()
+            else:
+                print(serializer.errors)
         habitat = validated_data.pop('habitat', None)
         if habitat:
-            serializer = HabitatSerializer(data=habitat)
-            if serializer.is_valid():
-                habitat = serializer.save()
-            else:
-                print(serializer.errors)
-        feeding = validated_data.pop('feeding', None)
-        if feeding:
-            serializer = FeedingSerializer(data=feeding)
-            if serializer.is_valid():
-                feeding = serializer.save()
-            else:
-                print(serializer.errors)
+            habitat = Text.objects.create(**habitat)
         reproduction = validated_data.pop('reproduction', None)
         if reproduction:
             serializer = ReproductionSerializer(data=reproduction)
@@ -468,22 +737,16 @@ class BirdSerializer(serializers.ModelSerializer):
                 reproduction = serializer.save()
             else:
                 print(serializer.errors)
-        behavior = validated_data.pop('behavior', None)
-        if behavior:
-            behavior = Text.objects.create(**behavior)
         taxonomy = validated_data.pop('taxonomy', None)
         if taxonomy:
             taxonomy = Text.objects.create(**taxonomy)
         conservation = validated_data.pop('conservation', None)
         if conservation:
-            serializer = ConservationSerializer(data=conservation)
+            serializer = TypeSerializer(data=conservation)
             if serializer.is_valid():
                 conservation = serializer.save()
             else:
                 print(serializer.errors)
-        curiosities = validated_data.pop('curiosities', None)
-        if curiosities:
-            curiosities = Text.objects.create(**curiosities)
         own_citation = validated_data.pop('own_citation', None)
         if own_citation:
             serializer = ReferenceSerializer(data=own_citation)
@@ -491,30 +754,51 @@ class BirdSerializer(serializers.ModelSerializer):
                 own_citation = serializer.save()
             else:
                 print(serializer.errors)
-
+        subspecies_data = validated_data.pop('subspecies', [])
         common_names_data = validated_data.pop('common_names', [])
+        scientific_names_data = validated_data.pop('scientific_names', [])
         images_data = validated_data.pop('images', [])
         videos_data = validated_data.pop('videos', [])
         singing_data = validated_data.pop('singing', [])
-        heights_data = validated_data.pop('heights', [])
+        feeding_data = validated_data.pop('feeding', [])
+        behavior_data = validated_data.pop('behavior', [])
+        similar_species_data = validated_data.pop('similar_species', [])
+        references_data = validated_data.pop('references', [])
         bird = Bird.objects.create(family=family, description=description, identification=identification,
-                                   distribution=distribution, habitat=habitat, feeding=feeding,
-                                   reproduction=reproduction, behavior=behavior, taxonomy=taxonomy,
-                                   conservation=conservation, curiosities=curiosities, own_citation=own_citation,
-                                   **validated_data)
+                                   distribution=distribution, migration=migration, habitat=habitat,
+                                   reproduction=reproduction, taxonomy=taxonomy, conservation=conservation,
+                                   own_citation=own_citation, **validated_data)
 
+        subspecies = []
+        for subs in subspecies_data:
+            serializer = SubspeciesSerializer(data=subs)
+            if serializer.is_valid():
+                obj = serializer.save()
+                subspecies.append(obj)
+            else:
+                print(serializer.errors)
+        bird.subspecies.set(subspecies)
         common_names = []
-        for common_name in common_names_data:
-            serializer = TextSerializer(data=common_name)
+        for c_n in common_names_data:
+            serializer = CommonNameBirdSerializer(data=c_n)
             if serializer.is_valid():
                 c_n = serializer.save()
                 common_names.append(c_n)
             else:
                 print(serializer.errors)
         bird.common_names.set(common_names)
+        scientific_names = []
+        for sci_name in scientific_names_data:
+            serializer = ScientificNameBirdSerializer(data=sci_name)
+            if serializer.is_valid():
+                c_n = serializer.save()
+                scientific_names.append(c_n)
+            else:
+                print(serializer.errors)
+        bird.scientific_names.set(scientific_names)
         images = []
         for image in images_data:
-            serializer = ImageSerializer(data=image)
+            serializer = BirdImageSerializer(data=image)
             if serializer.is_valid():
                 im = serializer.save()
                 images.append(im)
@@ -539,15 +823,38 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         bird.singing.set(singing)
-        heights = []
-        for height in heights_data:
-            serializer = LengthSerializer(data=height)
+        feeding = []
+        for feed in feeding_data:
+            serializer = TypeSerializer(data=feed)
             if serializer.is_valid():
-                he = serializer.save()
-                heights.append(he)
+                obj = serializer.save()
+                feeding.append(obj)
             else:
                 print(serializer.errors)
-        bird.heights.set(heights)
+        bird.feeding.set(feeding)
+        behavior = []
+        for beh in behavior_data:
+            serializer = TypeSerializer(data=beh)
+            if serializer.is_valid():
+                obj = serializer.save()
+                behavior.append(obj)
+            else:
+                print(serializer.errors)
+        bird.behavior.set(behavior)
+        similar_species = []
+        for ss in similar_species_data:
+            if isinstance(ss, Bird):
+                similar_species.append(ss)
+        bird.similar_species.set(similar_species)
+        references = []
+        for ref in references_data:
+            serializer = ReferenceSerializer(data=ref)
+            if serializer.is_valid():
+                obj = serializer.save()
+                references.append(obj)
+            else:
+                print(serializer.errors)
+        bird.references.set(references)
         return bird
 
     def update(self, instance, validated_data):
@@ -583,20 +890,20 @@ class BirdSerializer(serializers.ModelSerializer):
                 instance.distribution = distribution
             else:
                 print(serializer.errors)
+        migration = validated_data.pop('migration', None)
+        if migration:
+            serializer = TypeSerializer(instance.migration, data=migration)
+            if serializer.is_valid():
+                migration = serializer.save()
+                instance.migration = migration
+            else:
+                print(serializer.errors)
         habitat = validated_data.pop('habitat', None)
         if habitat:
-            serializer = HabitatSerializer(instance.habitat, data=habitat)
+            serializer = TextSerializer(instance.habitat, data=habitat)
             if serializer.is_valid():
                 habitat = serializer.save()
                 instance.habitat = habitat
-            else:
-                print(serializer.errors)
-        feeding = validated_data.pop('feeding', None)
-        if feeding:
-            serializer = FeedingSerializer(instance.feeding, data=feeding)
-            if serializer.is_valid():
-                feeding = serializer.save()
-                instance.feeding = feeding
             else:
                 print(serializer.errors)
         reproduction = validated_data.pop('reproduction', None)
@@ -605,14 +912,6 @@ class BirdSerializer(serializers.ModelSerializer):
             if serializer.is_valid():
                 reproduction = serializer.save()
                 instance.reproduction = reproduction
-            else:
-                print(serializer.errors)
-        behavior = validated_data.pop('behavior', None)
-        if behavior:
-            serializer = TextSerializer(instance.behavior, data=behavior)
-            if serializer.is_valid():
-                behavior = serializer.save()
-                instance.behavior = behavior
             else:
                 print(serializer.errors)
         taxonomy = validated_data.pop('taxonomy', None)
@@ -625,18 +924,10 @@ class BirdSerializer(serializers.ModelSerializer):
                 print(serializer.errors)
         conservation = validated_data.pop('conservation', None)
         if conservation:
-            serializer = ConservationSerializer(instance.conservation, data=conservation)
+            serializer = TypeSerializer(instance.conservation, data=conservation)
             if serializer.is_valid():
                 conservation = serializer.save()
                 instance.conservation = conservation
-            else:
-                print(serializer.errors)
-        curiosities = validated_data.pop('curiosities', None)
-        if curiosities:
-            serializer = TextSerializer(instance.curiosities, data=curiosities)
-            if serializer.is_valid():
-                curiosities = serializer.save()
-                instance.curiosities = curiosities
             else:
                 print(serializer.errors)
         own_citation = validated_data.pop('own_citation', None)
@@ -648,22 +939,44 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
 
+        instance.subspecies.all().delete()
+        subspecies_data = validated_data.pop('subspecies', [])
+        subspecies = []
+        for subs in subspecies_data:
+            serializer = SubspeciesSerializer(data=subs)
+            if serializer.is_valid():
+                obj = serializer.save()
+                subspecies.append(obj)
+            else:
+                print(serializer.errors)
+        instance.subspecies.set(subspecies)
         instance.common_names.all().delete()
         common_names_data = validated_data.pop('common_names', [])
         common_names = []
-        for common_name in common_names_data:
-            serializer = TextSerializer(data=common_name)
+        for com_name in common_names_data:
+            serializer = CommonNameBirdSerializer(data=com_name)
             if serializer.is_valid():
-                si = serializer.save()
-                common_names.append(si)
+                obj = serializer.save()
+                common_names.append(obj)
             else:
                 print(serializer.errors)
         instance.common_names.set(common_names)
+        instance.scientific_names.all().delete()
+        scientific_names_data = validated_data.pop('scientific_names', [])
+        scientific_names = []
+        for sci_name in scientific_names_data:
+            serializer = ScientificNameBirdSerializer(data=sci_name)
+            if serializer.is_valid():
+                si = serializer.save()
+                scientific_names.append(si)
+            else:
+                print(serializer.errors)
+        instance.scientific_names.set(scientific_names)
         instance.images.all().delete()
         images_data = validated_data.pop('images', [])
         images = []
         for image in images_data:
-            serializer = ImageSerializer(data=image)
+            serializer = BirdImageSerializer(data=image)
             if serializer.is_valid():
                 si = serializer.save()
                 images.append(si)
@@ -681,29 +994,56 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         instance.videos.set(videos)
-        instance.heights.all().delete()
-        heights_data = validated_data.pop('heights', [])
-        heights = []
-        for height in heights_data:
-            serializer = LengthSerializer(data=height)
-            if serializer.is_valid():
-                si = serializer.save()
-                heights.append(si)
-            else:
-                print(serializer.errors)
-        instance.heights.set(heights)
         instance.singing.all().delete()
         singing_data = validated_data.pop('singing', [])
         singing = []
         for sing in singing_data:
             serializer = AudioSerializer(data=sing)
             if serializer.is_valid():
-                si = serializer.save()
-                singing.append(si)
+                obj = serializer.save()
+                singing.append(obj)
             else:
                 print(serializer.errors)
         instance.singing.set(singing)
-        instance.scientific_name = validated_data.get('scientific_name', None)
+        instance.feeding.all().delete()
+        feeding_data = validated_data.pop('feeding', [])
+        feeding = []
+        for feed in feeding_data:
+            serializer = TypeSerializer(data=feed)
+            if serializer.is_valid():
+                obj = serializer.save()
+                feeding.append(obj)
+            else:
+                print(serializer.errors)
+        instance.feeding.set(feeding)
+        instance.behavior.all().delete()
+        behavior_data = validated_data.pop('behavior', [])
+        behavior = []
+        for beh in behavior_data:
+            serializer = TypeSerializer(data=beh)
+            if serializer.is_valid():
+                obj = serializer.save()
+                behavior.append(obj)
+            else:
+                print(serializer.errors)
+        instance.behavior.set(behavior)
+        similar_species_data = validated_data.pop('similar_species', [])
+        similar_species = []
+        for ss in similar_species_data:
+            if isinstance(ss, Bird):
+                similar_species.append(ss)
+        instance.similar_species.set(similar_species)
+        instance.references.all().delete()
+        references_data = validated_data.pop('references', [])
+        references = []
+        for ref in references_data:
+            serializer = ReferenceSerializer(data=ref)
+            if serializer.is_valid():
+                obj = serializer.save()
+                references.append(obj)
+            else:
+                print(serializer.errors)
+        instance.references.set(references)
         instance.save()
         return instance
 
