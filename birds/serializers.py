@@ -687,7 +687,7 @@ class BirdSerializer(serializers.ModelSerializer):
     behavior = TypeSerializer(many=True, required=False)
     taxonomy = TextSerializer(required=False)
     conservation = TypeSerializer(required=False)
-    similar_species = PrimaryKeyRelatedField(read_only=True, many=True)
+    similar_species = PrimaryKeyRelatedField(many=True, queryset=Bird.objects.all())
     references = ReferenceSerializer(required=False, many=True)
     own_citation = ReferenceSerializer(required=False)
 
@@ -842,10 +842,9 @@ class BirdSerializer(serializers.ModelSerializer):
                 print(serializer.errors)
         bird.behavior.set(behavior)
         similar_species = []
-        for ss_id in similar_species_data:
-            ss = Bird.objects.get(id=ss_id)[0]
-            if ss:
-                similar_species.append(ss.id)
+        for ss in similar_species_data:
+            if isinstance(ss, Bird):
+                similar_species.append(ss)
         bird.similar_species.set(similar_species)
         references = []
         for ref in references_data:
@@ -1028,13 +1027,11 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         instance.behavior.set(behavior)
-        instance.similar_species.all().delete()
         similar_species_data = validated_data.pop('similar_species', [])
         similar_species = []
-        for ss_id in similar_species_data:
-            ss = Bird.objects.get(id=ss_id)[0]
-            if ss:
-                similar_species.append(ss.id)
+        for ss in similar_species_data:
+            if isinstance(ss, Bird):
+                similar_species.append(ss)
         instance.similar_species.set(similar_species)
         instance.references.all().delete()
         references_data = validated_data.pop('references', [])
@@ -1049,5 +1046,6 @@ class BirdSerializer(serializers.ModelSerializer):
         instance.references.set(references)
         instance.save()
         return instance
+
 
 
