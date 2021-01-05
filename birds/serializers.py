@@ -239,7 +239,7 @@ class TypeSerializer(serializers.ModelSerializer):
             serializer = TextSerializer(instance.name, data=name)
             if serializer.is_valid():
                 name = serializer.save()
-                instance.text = name
+                instance.name = name
             else:
                 print(serializer.errors)
         image = validated_data.get('image', None)
@@ -313,6 +313,9 @@ class IdentificationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         description = validated_data.pop('description', None)
+        plumage_data = validated_data.pop('plumage', [])
+        lengths_data = validated_data.pop('lengths', [])
+        weights_data = validated_data.pop('weights', [])
         if description:
             serializer = TextSerializer(data=description)
             if serializer.is_valid():
@@ -320,7 +323,6 @@ class IdentificationSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         identification = Identification.objects.create(description=description, **validated_data)
-        plumage_data = validated_data.pop('plumage', [])
         plumage = []
         for plum in plumage_data:
             serializer = TypeSerializer(data=plum)
@@ -330,7 +332,6 @@ class IdentificationSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         identification.plumage.set(plumage)
-        lengths_data = validated_data.pop('lengths', [])
         lengths = []
         for len in lengths_data:
             serializer = MeasureSerializer(data=len)
@@ -340,7 +341,6 @@ class IdentificationSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         identification.lengths.set(lengths)
-        weights_data = validated_data.pop('weights', [])
         weights = []
         for wei in weights_data:
             serializer = MeasureSerializer(data=wei)
@@ -408,6 +408,7 @@ class ReproductionSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         text = validated_data.pop('text', None)
+        types_data = validated_data.pop('types', [])
         if text:
             serializer = TextSerializer(data=text)
             if serializer.is_valid():
@@ -415,7 +416,6 @@ class ReproductionSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         reproduction = Reproduction.objects.create(text=text, **validated_data)
-        types_data = validated_data.pop('types', [])
         types = []
         for len in types_data:
             serializer = TypeSerializer(data=len)
