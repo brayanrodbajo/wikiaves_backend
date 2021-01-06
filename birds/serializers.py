@@ -687,7 +687,7 @@ class BirdSerializer(serializers.ModelSerializer):
     behavior = TypeSerializer(many=True, required=False)
     taxonomy = TextSerializer(required=False)
     conservation = TypeSerializer(required=False)
-    similar_species = PrimaryKeyRelatedField(many=True, queryset=Bird.objects.all())
+    similar_species = PrimaryKeyRelatedField(many=True, queryset=Bird.objects.all(), required=False)
     references = ReferenceSerializer(required=False, many=True)
     own_citation = ReferenceSerializer(required=False)
 
