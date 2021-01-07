@@ -56,9 +56,6 @@ AUTH_USER_MODEL = 'users.CustomUser'
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly'
-    ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
@@ -71,8 +68,8 @@ AUTHENTICATION_BACKENDS = (
     "allauth.account.auth_backends.AuthenticationBackend"
 )
 
-REST_AUTH_SERIALIZERS = {
-    'USER_DETAILS_SERIALIZER': 'users.serializers.UserSerializer',
+REST_AUTH_REGISTER_SERIALIZERS = {
+    'REGISTER_SERIALIZER': 'users.serializers.CustomRegisterSerializer',
 }
 
 MIDDLEWARE = [
@@ -116,14 +113,14 @@ POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD')
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        # 'NAME': 'wiki_test',
-        # 'USER': 'postgres',
-        # 'HOST': 'localhost',
-        # 'PASSWORD': 'brayan',
-        'NAME': 'gis',
-        'USER': 'gisuser',
-        'HOST': 'postgis',
-        'PASSWORD': POSTGRES_PASSWORD,
+        'NAME': 'wiki_test',
+        'USER': 'postgres',
+        'HOST': 'localhost',
+        'PASSWORD': 'brayan',
+        # 'NAME': 'gis',
+        # 'USER': 'gisuser',
+        # 'HOST': 'postgis',
+        # 'PASSWORD': POSTGRES_PASSWORD,
         'PORT': '5432',
     }
 }
