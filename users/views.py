@@ -30,7 +30,7 @@ class BirdEditorView(APIView):
         bird = Bird.objects.get(id=id_bird)
         editor = CustomUser.objects.get(id=id_editor)
         BirdEditor.objects.create(bird=bird, editor=editor)
-        response= {
+        response = {
             'status': 'assigned'
         }
         return Response(response, status=status.HTTP_200_OK)
