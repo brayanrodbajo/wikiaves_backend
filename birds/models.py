@@ -192,19 +192,24 @@ class Video(models.Model):
 
 
 class Audio(models.Model):
-    BIRD = 'BIRD'
-    FAMILY = 'FAMILY'
-    ORDER = 'ORDER'
-    CATEGORY_CHOICES = (
-        ('BIRD', BIRD),
-        ('FAMILY', FAMILY),
-        ('ORDER', ORDER),
-    )
     url = models.URLField(unique=True)
     author = models.ForeignKey(Author, related_name='audios_authored', null=True, on_delete=models.SET_NULL)
     format = models.CharField(max_length=4)
     location = models.PointField(null=True, blank=True)
-    bird = models.ForeignKey(Bird, related_name='singing', null=True, on_delete=models.SET_NULL)
+
+
+class Vocalization(models.Model):
+    SONG = 'SONG'
+    CALL = 'CALL'
+    CATEGORY_CHOICES = (
+        ('SONG', SONG),
+        ('CALL', CALL)
+    )
+    category = models.CharField(max_length=6, choices=CATEGORY_CHOICES)
+    short_description = models.ForeignKey(Text, related_name='vocalization_short', null=True, on_delete=models.SET_NULL)
+    long_description = models.ForeignKey(Text, related_name='vocalization_long', null=True, on_delete=models.SET_NULL)
+    audio = models.ForeignKey(Audio, related_name='vocalization', null=True, on_delete=models.SET_NULL)
+    bird = models.ForeignKey(Bird, related_name='vocalizations', null=True, on_delete=models.SET_NULL)
 
 
 class Measure(models.Model):

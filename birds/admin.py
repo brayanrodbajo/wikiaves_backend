@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from birds.models import Text, Reference, Author, Order, Family, Identification, Reproduction, \
-    Bird, Image, Video, Audio, Value, Type, Subspecies, SubspeciesName, BirdImage, Measure, CommonNameBird
+    Bird, Image, Video, Audio, Value, Type, Subspecies, SubspeciesName, BirdImage, Measure, CommonNameBird, Vocalization
 
 
 @admin.register(Text)
@@ -17,7 +17,7 @@ class ReferenceAdmin(admin.ModelAdmin):
 
 @admin.register(Author)
 class AuthorAdmin(admin.ModelAdmin):
-    list_display = ('name', 'last_name', 'reference', 'image', 'url', 'description')
+    list_display = ('first_name', 'last_name', 'reference', 'image', 'url', 'description')
 
 
 @admin.register(Order)
@@ -89,7 +89,12 @@ class VideoAdmin(admin.ModelAdmin):
 
 @admin.register(Audio)
 class AudioAdmin(admin.ModelAdmin):
-    list_display = ('url', 'author', 'format', 'location', 'bird')
+    list_display = ('url', 'author', 'format', 'location')
+
+
+@admin.register(Vocalization)
+class VocalizationAdmin(admin.ModelAdmin):
+    list_display = ('bird', 'audio', 'category', 'short_description', 'long_description')
 
 
 @admin.register(Measure)

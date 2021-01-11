@@ -141,6 +141,17 @@ Bird creation example:
             "unit": "gr"
         }]
     },
+    "vocalizations": [{
+        "category": "CALL",
+        "short_description": {
+            "language": "es",
+            "text": "hola hola"
+        },
+        "audio": {
+            "url": "https://googles.com",
+            "format": "MP3"
+        }
+    }],
     "similar_species": [
         2, 3, 10
     ]
