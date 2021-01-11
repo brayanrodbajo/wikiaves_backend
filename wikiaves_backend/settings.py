@@ -117,10 +117,10 @@ DATABASES = {
         'USER': 'postgres',
         'HOST': 'localhost',
         'PASSWORD': 'brayan',
-        # 'NAME': 'gis',
-        # 'USER': 'gisuser',
-        # 'HOST': 'postgis',
-        # 'PASSWORD': POSTGRES_PASSWORD,
+        'NAME': 'gis',
+        'USER': 'gisuser',
+        'HOST': 'postgis',
+        'PASSWORD': POSTGRES_PASSWORD,
         'PORT': '5432',
     }
 }
