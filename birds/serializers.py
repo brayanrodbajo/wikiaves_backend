@@ -3,7 +3,7 @@ from rest_framework.relations import PrimaryKeyRelatedField
 
 from birds.models import Text, Author, Image, ScientificNameOrder, ScientificNameFamily, CommonNameBird, \
     ScientificNameBird, Order, Family, Identification, Type, Measure, Value, Reproduction, Reference, Bird, Video, \
-    BirdImage, Audio, Subspecies, SubspeciesName
+    BirdImage, Audio, Subspecies, SubspeciesName, Vocalization
 
 
 class TextSerializer(serializers.ModelSerializer):
@@ -48,7 +48,7 @@ class AuthorSerializer(serializers.ModelSerializer):
                 instance.image = image
             else:
                 print(serializer.errors)
-        instance.name = validated_data.get('name', None)
+        instance.first_name = validated_data.get('first_name', None)
         instance.last_name = validated_data.get('last_name', None)
         instance.url = validated_data.get('url', None)
         instance.description = validated_data.get('description', None)
@@ -552,7 +552,7 @@ class AudioSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Audio
-        exclude = ('id', 'bird')
+        exclude = ('id',)
         extra_kwargs = {
             'url': {'validators': []},
         }
@@ -580,6 +580,71 @@ class AudioSerializer(serializers.ModelSerializer):
         instance.url = validated_data.get('url', None)
         instance.format = validated_data.get('format', None)
         instance.location = validated_data.get('location', None)
+        instance.save()
+        return instance
+
+
+class VocalizationSerializer(serializers.ModelSerializer):
+    short_description = TextSerializer(required=False)
+    long_description = TextSerializer(required=False)
+    audio = AudioSerializer(required=False)
+
+    class Meta:
+        model = Vocalization
+        exclude = ('id', 'bird')
+
+    def create(self, validated_data):
+        short_description = validated_data.pop('short_description', None)
+        if short_description:
+            serializer = TextSerializer(data=short_description)
+            if serializer.is_valid():
+                short_description = serializer.save()
+            else:
+                print(serializer.errors)
+        long_description = validated_data.pop('long_description', None)
+        if long_description:
+            serializer = TextSerializer(data=long_description)
+            if serializer.is_valid():
+                long_description = serializer.save()
+            else:
+                print(serializer.errors)
+        audio = validated_data.pop('audio', None)
+        if audio:
+            serializer = AudioSerializer(data=audio)
+            if serializer.is_valid():
+                audio = serializer.save()
+            else:
+                print(serializer.errors)
+        vocalization = Vocalization.objects.create(short_description=short_description,
+                                                   long_description=long_description, audio=audio, **validated_data)
+        return vocalization
+
+    def update(self, instance, validated_data):
+        short_description = validated_data.get('short_description', None)
+        if short_description:
+            serializer = TextSerializer(instance.short_description, data=short_description)
+            if serializer.is_valid():
+                short_description = serializer.save()
+                instance.short_description = short_description
+            else:
+                print(serializer.errors)
+        long_description = validated_data.get('long_description', None)
+        if long_description:
+            serializer = TextSerializer(instance.long_description, data=long_description)
+            if serializer.is_valid():
+                long_description = serializer.save()
+                instance.long_description = long_description
+            else:
+                print(serializer.errors)
+        audio = validated_data.get('audio', None)
+        if audio:
+            serializer = AudioSerializer(instance.audio, data=audio)
+            if serializer.is_valid():
+                audio = serializer.save()
+                instance.audio = audio
+            else:
+                print(serializer.errors)
+        instance.category = validated_data.get('category', None)
         instance.save()
         return instance
 
@@ -675,7 +740,7 @@ class BirdSerializer(serializers.ModelSerializer):
     scientific_names = ScientificNameBirdSerializer(required=False, many=True)
     images = BirdImageSerializer(many=True, required=False)
     videos = VideoSerializer(many=True, required=False)
-    singing = AudioSerializer(many=True, required=False)
+    vocalizations = VocalizationSerializer(many=True, required=False)
     family = FamilySerializer(required=False)
     description = TextSerializer(required=False)
     identification = IdentificationSerializer(required=False)
@@ -759,7 +824,7 @@ class BirdSerializer(serializers.ModelSerializer):
         scientific_names_data = validated_data.pop('scientific_names', [])
         images_data = validated_data.pop('images', [])
         videos_data = validated_data.pop('videos', [])
-        singing_data = validated_data.pop('singing', [])
+        vocalizations_data = validated_data.pop('vocalizations', [])
         feeding_data = validated_data.pop('feeding', [])
         behavior_data = validated_data.pop('behavior', [])
         similar_species_data = validated_data.pop('similar_species', [])
@@ -814,15 +879,15 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         bird.videos.set(videos)
-        singing = []
-        for sing in singing_data:
-            serializer = AudioSerializer(data=sing)
+        vocalizations = []
+        for song in vocalizations_data:
+            serializer = VocalizationSerializer(data=song)
             if serializer.is_valid():
                 si = serializer.save()
-                singing.append(si)
+                vocalizations.append(si)
             else:
                 print(serializer.errors)
-        bird.singing.set(singing)
+        bird.vocalizations.set(vocalizations)
         feeding = []
         for feed in feeding_data:
             serializer = TypeSerializer(data=feed)
@@ -994,17 +1059,17 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         instance.videos.set(videos)
-        instance.singing.all().delete()
-        singing_data = validated_data.pop('singing', [])
-        singing = []
-        for sing in singing_data:
-            serializer = AudioSerializer(data=sing)
+        instance.vocalizations.all().delete()
+        vocalizations_data = validated_data.pop('vocalizations', [])
+        vocalizations = []
+        for song in vocalizations_data:
+            serializer = VocalizationSerializer(data=song)
             if serializer.is_valid():
                 obj = serializer.save()
-                singing.append(obj)
+                vocalizations.append(obj)
             else:
                 print(serializer.errors)
-        instance.singing.set(singing)
+        instance.vocalizations.set(vocalizations)
         instance.feeding.all().delete()
         feeding_data = validated_data.pop('feeding', [])
         feeding = []
