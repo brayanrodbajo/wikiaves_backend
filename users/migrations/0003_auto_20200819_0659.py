@@ -4,7 +4,7 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('users', '0002_auto_20200813_1708'),
+        ('users', '0008_auto_20210107_1620'),
     ]
 
     def generate_superuser(apps, schema_editor):
