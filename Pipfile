@@ -14,7 +14,7 @@ django-rest-auth = "==0.9.5"
 django-allauth = "==0.42.0"
 dj-config-url = "~=0.1.1"
 Django = "~=3.1"
-rest_condition~=1.0.3
+rest_condition = "~=1.0.3"
 
 [requires]
 python_version = "3.8"
