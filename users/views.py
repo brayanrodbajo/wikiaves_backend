@@ -15,6 +15,7 @@ from users.serializers import CustomRegisterSerializer
 class Users(ListAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = CustomRegisterSerializer
+    permission_classes = (AdminCustomPermission,)
 
 
 class SingleUser(RetrieveAPIView):
