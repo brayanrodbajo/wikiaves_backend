@@ -225,14 +225,8 @@ class Measure(models.Model):
         ('in', IN),
         ('gr', GR),
     )
-    LENGTH = 'length'
-    WEIGHT = 'weight'
-    NAME_CHOICES = (
-        ('length', LENGTH),
-        ('weight', WEIGHT)
-    )
     value = models.ForeignKey(Value, null=True, related_name='measure', on_delete=models.SET_NULL)
-    name = models.CharField(max_length=6, choices=NAME_CHOICES)
+    name = models.CharField(max_length=50)
     unit = models.CharField(max_length=2, choices=UNIT_CHOICES)
     identification_lengths = models.ForeignKey(Identification, related_name='lengths', null=True,
                                                on_delete=models.SET_NULL)

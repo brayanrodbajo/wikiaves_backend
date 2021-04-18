@@ -10,8 +10,17 @@ from users.models import CustomUser, BirdEditor
 from users.permissions import AdminCustomPermission
 from users.serializers import CustomRegisterSerializer
 
+from rest_auth.views import LoginView
 
-# ViewSets define the view behavior.
+
+class CustomLoginView(LoginView):
+    def get_response(self):
+        original_response = super().get_response()
+        mydata = {"role": self.user.role, "name": self.user.name}
+        original_response.data.update(mydata)
+        return original_response
+
+
 class Users(ListAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = CustomRegisterSerializer
