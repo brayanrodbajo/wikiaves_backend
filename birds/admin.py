@@ -1,7 +1,8 @@
 from django.contrib import admin
 
 from birds.models import Text, Reference, Author, Order, Family, Identification, Reproduction, \
-    Bird, Image, Video, Audio, Value, Type, Subspecies, SubspeciesName, BirdImage, Measure, CommonNameBird, Vocalization
+    Bird, Image, Video, Audio, Value, Type, Subspecies, SubspeciesName, BirdImage, Measure, CommonNameBird, \
+    Vocalization, Distribution
 
 
 @admin.register(Text)
@@ -50,6 +51,11 @@ class ReproductionAdmin(admin.ModelAdmin):
     list_display = ('text',)
 
 
+@admin.register(Distribution)
+class DistributionAdmin(admin.ModelAdmin):
+    list_display = ('text', 'location_map')
+
+
 class CNInlineAdmin(admin.TabularInline):
     model = CommonNameBird
 
@@ -69,7 +75,7 @@ class SubspeciesAdmin(admin.ModelAdmin):
 
 @admin.register(SubspeciesName)
 class SubspeciesNameAdmin(admin.ModelAdmin):
-    list_display = ('name','main')
+    list_display = ('name', 'main')
 
 
 @admin.register(Image)
@@ -79,7 +85,7 @@ class ImageAdmin(admin.ModelAdmin):
 
 @admin.register(BirdImage)
 class BirdImageAdmin(admin.ModelAdmin):
-    list_display = ('url', 'thumbnail', 'category', 'format', 'location', 'height', 'width', 'bird')
+    list_display = ('url', 'thumbnail', 'category', 'format', 'location', 'height', 'width', 'bird', 'main')
 
 
 @admin.register(Video)

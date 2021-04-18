@@ -86,6 +86,19 @@ class Type(models.Model):
 class Reproduction(models.Model):
     text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='reproduction')
 
+
+class Image(models.Model):
+    url = models.URLField(unique=True)
+    thumbnail = models.URLField(null=True, blank=True)
+    format = models.CharField(max_length=4, null=True, blank=True)
+    height = models.FloatField(null=True, blank=True)
+    width = models.FloatField(null=True, blank=True)
+
+
+class Distribution(models.Model):
+    text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='distribution')
+    location_map = models.ForeignKey(Image, null=True, on_delete=models.SET_NULL, related_name='distribution')
+
 #
 # class SDYouth(models.Model):
 #     image = models.ForeignKey('BirdImage', related_name='sdyouth', null=True, on_delete=models.SET_NULL)
@@ -119,13 +132,11 @@ class Bird(models.Model):
     family = models.ForeignKey(Family, related_name='bird', null=True, on_delete=models.SET_NULL)
     description = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='birds_desc')
     identification = models.ForeignKey(Identification, related_name='bird', null=True, on_delete=models.SET_NULL)
-    distribution = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='birds_dist')
+    distribution = models.ForeignKey(Distribution, null=True, on_delete=models.SET_NULL, related_name='birds_dist')
     habitat = models.ForeignKey(Text, related_name='bird', null=True, on_delete=models.SET_NULL)
     reproduction = models.ForeignKey(Reproduction, related_name='bird', null=True, on_delete=models.SET_NULL)
     taxonomy = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='birds_tax')
     conservation = models.ForeignKey(Type, related_name='bird_conservation', null=True, on_delete=models.SET_NULL)
-    # sexual_differentiation = models.ForeignKey(SexualDifferentiation, related_name='bird', null=True,
-    #                                            on_delete=models.SET_NULL)
     references = models.ManyToManyField(Reference, through='ReferencesBird', related_name='bird_refs')
     migration = models.ForeignKey(Type, related_name='bird_migration', null=True, on_delete=models.SET_NULL)
     own_citation = models.ForeignKey(Reference, related_name='bird', null=True, on_delete=models.SET_NULL)
@@ -139,22 +150,14 @@ class ReferencesBird(models.Model):
 
 
 class Subspecies(models.Model):
-    distribution = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='subspecies_dist')
+    distribution = models.ForeignKey(Distribution, null=True, on_delete=models.SET_NULL, related_name='subspecies_dist')
     bird = models.ForeignKey(Bird, related_name='subspecies', null=True, on_delete=models.SET_NULL)
 
 
 class SubspeciesName(models.Model):
     subspecies = models.ForeignKey(Subspecies, related_name='names', null=True, on_delete=models.SET_NULL)
-    name = models.ForeignKey(Text, related_name='sub_name', null=True, on_delete=models.SET_NULL)
+    name = models.CharField(max_length=100)
     main = models.BooleanField(default=False)
-
-
-class Image(models.Model):
-    url = models.URLField(unique=True)
-    thumbnail = models.URLField(null=True, blank=True)
-    format = models.CharField(max_length=4, null=True, blank=True)
-    height = models.FloatField(null=True, blank=True)
-    width = models.FloatField(null=True, blank=True)
 
 
 class BirdImage(Image):
@@ -168,6 +171,7 @@ class BirdImage(Image):
     )
     category = models.CharField(max_length=6, choices=CATEGORY_CHOICES, null=True, blank=True)
     location = models.PointField(null=True, blank=True)
+    main = models.BooleanField(default=False)
     bird = models.ForeignKey(Bird, related_name='images', null=True, on_delete=models.SET_NULL)
     author = models.ForeignKey(Author, related_name='images_authored', null=True, on_delete=models.SET_NULL)
 

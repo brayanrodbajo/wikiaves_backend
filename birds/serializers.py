@@ -3,7 +3,7 @@ from rest_framework.relations import PrimaryKeyRelatedField
 
 from birds.models import Text, Author, Image, ScientificNameOrder, ScientificNameFamily, CommonNameBird, \
     ScientificNameBird, Order, Family, Identification, Type, Measure, Value, Reproduction, Reference, Bird, Video, \
-    BirdImage, Audio, Subspecies, SubspeciesName, Vocalization
+    BirdImage, Audio, Subspecies, SubspeciesName, Vocalization, Distribution
 
 
 class TextSerializer(serializers.ModelSerializer):
@@ -534,6 +534,7 @@ class BirdImageSerializer(serializers.ModelSerializer):
                 print(serializer.errors)
         instance.category = validated_data.get('category', None)
         instance.location = validated_data.get('location', None)
+        instance.main = validated_data.get('main', None)
         instance.save()
         return instance
 
@@ -650,40 +651,62 @@ class VocalizationSerializer(serializers.ModelSerializer):
 
 
 class SubspeciesNameSerializer(serializers.ModelSerializer):
-    name = TextSerializer(required=False)
 
     class Meta:
         model = SubspeciesName
         fields = ('name', 'main')
 
+
+class DistributionSerializer(serializers.ModelSerializer):
+    text = TextSerializer(required=False)
+    location_map = ImageSerializer(required=False)
+
+    class Meta:
+        model = Distribution
+        fields = ('text', 'location_map')
+
     def create(self, validated_data):
-        name = validated_data.pop('name', None)
-        if name:
-            serializer = TextSerializer(data=name)
+        text = validated_data.pop('text', None)
+        if text:
+            serializer = TextSerializer(data=text)
             if serializer.is_valid():
-                name = serializer.save()
+                text = serializer.save()
             else:
                 print(serializer.errors)
-        subspecies_name = SubspeciesName.objects.create(name=name, **validated_data)
-        return subspecies_name
+        location_map = validated_data.pop('location_map', None)
+        if location_map:
+            serializer = ImageSerializer(data=location_map)
+            if serializer.is_valid():
+                location_map = serializer.save()
+            else:
+                print(serializer.errors)
+        distribution = Distribution.objects.create(text=text, location_map=location_map)
+        return distribution
 
     def update(self, instance, validated_data):
-        name = validated_data.get('name', None)
-        if name:
-            serializer = TextSerializer(instance.name, data=name)
+        text = validated_data.get('text', None)
+        if text:
+            serializer = TextSerializer(instance.text, data=text)
             if serializer.is_valid():
-                name = serializer.save()
-                instance.name = name
+                text = serializer.save()
+                instance.name = text
             else:
                 print(serializer.errors)
-        instance.main = validated_data.get('main', None)
+        location_map = validated_data.get('location_map', None)
+        if location_map:
+            serializer = ImageSerializer(instance.location_map, data=location_map)
+            if serializer.is_valid():
+                location_map = serializer.save()
+                instance.name = location_map
+            else:
+                print(serializer.errors)
         instance.save()
         return instance
 
 
 class SubspeciesSerializer(serializers.ModelSerializer):
     names = SubspeciesNameSerializer(required=False, many=True)
-    distribution = TextSerializer(required=False)
+    distribution = DistributionSerializer(required=False)
 
     class Meta:
         model = Subspecies
@@ -692,7 +715,7 @@ class SubspeciesSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         distribution = validated_data.pop('distribution', None)
         if distribution:
-            serializer = TextSerializer(data=distribution)
+            serializer = DistributionSerializer(data=distribution)
             if serializer.is_valid():
                 distribution = serializer.save()
             else:
@@ -713,7 +736,7 @@ class SubspeciesSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         distribution = validated_data.get('distribution', None)
         if distribution:
-            serializer = TextSerializer(instance.distribution, data=distribution)
+            serializer = DistributionSerializer(instance.distribution, data=distribution)
             if serializer.is_valid():
                 distribution = serializer.save()
                 instance.distribution = distribution
@@ -744,7 +767,7 @@ class BirdSerializer(serializers.ModelSerializer):
     family = FamilySerializer(required=False)
     description = TextSerializer(required=False)
     identification = IdentificationSerializer(required=False)
-    distribution = TextSerializer(required=False)
+    distribution = DistributionSerializer(required=False)
     migration = TypeSerializer(required=False)
     habitat = TextSerializer(required=False)
     feeding = TypeSerializer(many=True, required=False)
@@ -784,7 +807,11 @@ class BirdSerializer(serializers.ModelSerializer):
                 print(serializer.errors)
         distribution = validated_data.pop('distribution', None)
         if distribution:
-            distribution = Text.objects.create(**distribution)
+            serializer = DistributionSerializer(data=distribution)
+            if serializer.is_valid():
+                distribution = serializer.save()
+            else:
+                print(serializer.errors)
         migration = validated_data.pop('migration', None)
         if migration:
             serializer = TypeSerializer(data=migration)
@@ -949,7 +976,7 @@ class BirdSerializer(serializers.ModelSerializer):
                 print(serializer.errors)
         distribution = validated_data.pop('distribution', None)
         if distribution:
-            serializer = TextSerializer(instance.distribution, data=distribution)
+            serializer = DistributionSerializer(instance.distribution, data=distribution)
             if serializer.is_valid():
                 distribution = serializer.save()
                 instance.distribution = distribution
