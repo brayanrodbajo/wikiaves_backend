@@ -218,12 +218,16 @@ class Vocalization(models.Model):
 
 class Measure(models.Model):
     CM = 'cm'
+    MM = 'mm'
     IN = 'in'
-    GR = 'gr'
+    GR = 'g'
+    KG = 'kg'
     UNIT_CHOICES = (
         ('cm', CM),
+        ('mm', MM),
         ('in', IN),
-        ('gr', GR),
+        ('g', GR),
+        ('kg', KG),
     )
     value = models.ForeignKey(Value, null=True, related_name='measure', on_delete=models.SET_NULL)
     name = models.CharField(max_length=50)
