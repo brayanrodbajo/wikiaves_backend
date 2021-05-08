@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 
@@ -15,7 +16,7 @@ class TextSerializer(serializers.ModelSerializer):
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
-        exclude = ('id')
+        exclude = ('id',)
         extra_kwargs = {
             'url': {'validators': []},
         }
@@ -114,7 +115,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        exclude = ('id',)
+        fields = '__all__'
 
     def create(self, validated_data):
         scientific_names_data = validated_data.pop('scientific_names', [])
@@ -148,20 +149,17 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class FamilySerializer(serializers.ModelSerializer):
     scientific_names = ScientificNameFamilySerializer(required=False, many=True)
-    order = OrderSerializer(required=False)
 
     class Meta:
         model = Family
-        exclude = ('id',)
+        fields = '__all__'
 
     def create(self, validated_data):
         order = validated_data.pop('order', None)
         if order:
-            serializer = OrderSerializer(data=order)
-            if serializer.is_valid():
-                order = serializer.save()
-            else:
-                print(serializer.errors)
+            if not Order.objects.filter(id=order.id).exists():
+                print("ERROR: order", order.id, "does not exist")
+                order = None
         scientific_names_data = validated_data.pop('scientific_names', [])
         family = Family.objects.create(order=order, **validated_data)
         scientific_names = []
@@ -178,12 +176,10 @@ class FamilySerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         order = validated_data.get('order', None)
         if order:
-            serializer = OrderSerializer(instance.order, data=order)
-            if serializer.is_valid():
-                order = serializer.save()
+            if Order.objects.filter(id=order.id).exists():
                 instance.order = order
             else:
-                print(serializer.errors)
+                print("ERROR: order", order.id, "does not exist")
         scientific_names_data = validated_data.get('scientific_names', [])
         scientific_names = []
         instance.scientific_names.all().delete()
@@ -764,7 +760,6 @@ class BirdSerializer(serializers.ModelSerializer):
     images = BirdImageSerializer(many=True, required=False)
     videos = VideoSerializer(many=True, required=False)
     vocalizations = VocalizationSerializer(many=True, required=False)
-    family = FamilySerializer(required=False)
     description = TextSerializer(required=False)
     identification = IdentificationSerializer(required=False)
     distribution = DistributionSerializer(required=False)
@@ -790,11 +785,9 @@ class BirdSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         family = validated_data.pop('family', None)
         if family:
-            serializer = FamilySerializer(data=family)
-            if serializer.is_valid():
-                family = serializer.save()
-            else:
-                print(serializer.errors)
+            if not Family.objects.filter(id=family.id).exists():
+                print("ERROR: family", family.id, "does not exist")
+                family = None
         description = validated_data.pop('description', None)
         if description:
             description = Text.objects.create(**description)
@@ -952,12 +945,10 @@ class BirdSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         family = validated_data.pop('family', None)
         if family:
-            serializer = FamilySerializer(instance.family, data=family)
-            if serializer.is_valid():
-                family = serializer.save()
+            if Family.objects.filter(id=family.id).exists():
                 instance.family = family
             else:
-                print(serializer.errors)
+                print("ERROR: family", family.id, "does not exist")
         description = validated_data.pop('description', None)
         if description:
             serializer = TextSerializer(instance.description, data=description)
