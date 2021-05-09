@@ -169,15 +169,18 @@ class BirdImage(Image):
     BIRD = 'BIRD'
     FAMILY = 'FAMILY'
     ORDER = 'ORDER'
+    SUBSPECIES = 'SUBSPECIES'
     CATEGORY_CHOICES = (
         ('BIRD', BIRD),
         ('FAMILY', FAMILY),
         ('ORDER', ORDER),
+        ('SUBSPECIES', SUBSPECIES),
     )
-    category = models.CharField(max_length=6, choices=CATEGORY_CHOICES, null=True, blank=True)
+    category = models.CharField(max_length=10, choices=CATEGORY_CHOICES, null=True, blank=True)
     location = models.PointField(null=True, blank=True)
     main = models.BooleanField(default=False)
     bird = models.ForeignKey(Bird, related_name='images', null=True, on_delete=models.SET_NULL)
+    subspecies = models.ForeignKey(Subspecies, related_name='images', null=True, on_delete=models.SET_NULL)
     author = models.ForeignKey(Author, related_name='images_authored', null=True, on_delete=models.SET_NULL)
 
 
