@@ -124,6 +124,8 @@ class SimilarSpeciesSerializer(serializers.ModelSerializer):
         for ss in similar_species_data:
             if isinstance(ss, Bird):
                 bird_ids.append(ss)
+            else:
+                print("ERROR:", ss, "is not bird")
         obj = SimilarSpecies.objects.create(text=text)
         obj.bird_ids.set(bird_ids)
         return obj
@@ -143,6 +145,8 @@ class SimilarSpeciesSerializer(serializers.ModelSerializer):
         for ss in similar_species_data:
             if isinstance(ss, Bird):
                 bird_ids.append(ss)
+            else:
+                print("ERROR:", ss, "is not bird")
         instance.bird_ids.set(bird_ids)
         instance.save()
         return instance
@@ -835,6 +839,7 @@ class BirdSerializer(serializers.ModelSerializer):
     similar_species = SimilarSpeciesSerializer(required=False)
     references = ReferenceSerializer(required=False, many=True)
     own_citation = ReferenceSerializer(required=False)
+    authors = PrimaryKeyRelatedField(many=True, queryset=Author.objects.all(), required=False)
 
     class Meta:
         model = Bird
@@ -914,6 +919,7 @@ class BirdSerializer(serializers.ModelSerializer):
         feeding_data = validated_data.pop('feeding', [])
         behavior_data = validated_data.pop('behavior', [])
         references_data = validated_data.pop('references', [])
+        authors_data = validated_data.pop('authors', [])
         bird = Bird.objects.create(family=family, description=description, identification=identification,
                                    distribution=distribution, migration=migration, habitat=habitat,
                                    reproduction=reproduction, taxonomy=taxonomy, conservation=conservation,
@@ -1000,6 +1006,13 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         bird.references.set(references)
+        authors = []
+        for au in authors_data:
+            if isinstance(au, Author):
+                authors.append(au)
+            else:
+                print("ERROR:", au, "is not author")
+        bird.authors.set(authors)
         return bird
 
     def update(self, instance, validated_data):
@@ -1186,6 +1199,15 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         instance.references.set(references)
+        instance.authors.all().delete()
+        authors_data = validated_data.pop('authors', [])
+        authors = []
+        for au in authors_data:
+            if isinstance(au, Author):
+                authors.append(au)
+            else:
+                print("ERROR:", au, "is not author")
+        instance.authors.set(authors)
         instance.save()
         return instance
 
