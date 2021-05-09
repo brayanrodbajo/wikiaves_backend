@@ -122,8 +122,7 @@ class SimilarSpeciesSerializer(serializers.ModelSerializer):
         similar_species_data = validated_data.pop('bird_ids', [])
         bird_ids = []
         for ss in similar_species_data:
-            if isinstance(ss, Bird):
-                bird_ids.append(ss)
+            bird_ids.append(ss)
         obj = SimilarSpecies.objects.create(text=text)
         obj.bird_ids.set(bird_ids)
         return obj
@@ -140,8 +139,7 @@ class SimilarSpeciesSerializer(serializers.ModelSerializer):
         similar_species_data = validated_data.pop('bird_ids', [])
         bird_ids = []
         for ss in similar_species_data:
-            if isinstance(ss, Bird):
-                bird_ids.append(ss)
+            bird_ids.append(ss)
         instance.bird_ids.set(bird_ids)
         instance.save()
         return instance
@@ -302,12 +300,64 @@ class ValueSerializer(serializers.ModelSerializer):
         exclude = ('id',)
 
 
+class ReferenceSerializer(serializers.ModelSerializer):
+    authors = AuthorSerializer(many=True, required=False)
+
+    class Meta:
+        model = Reference
+        exclude = ('id',)
+
+    def create(self, validated_data):
+        authors_data = validated_data.pop('authors', [])
+        reference = Reference.objects.create(**validated_data)
+        authors = []
+        for author in authors_data:
+            serializer = AuthorSerializer(data=author)
+            if serializer.is_valid():
+                au = serializer.save()
+                authors.append(au)
+            else:
+                print(serializer.errors)
+        reference.authors.set(authors)
+        return reference
+
+    def update(self, instance, validated_data):
+        authors_data = validated_data.pop('authors', [])
+        authors = []
+        instance.authors.all().delete()
+        for author in authors_data:
+            serializer = AuthorSerializer(data=author)
+            if serializer.is_valid():
+                au = serializer.save()
+                authors.append(au)
+            else:
+                print(serializer.errors)
+        instance.authors.set(authors)
+        instance.referenced = validated_data.get('referenced', None)
+        instance.type = validated_data.get('type', None)
+        instance.title = validated_data.get('title', None)
+        instance.year = validated_data.get('year', None)
+        instance.series = validated_data.get('series', None)
+        instance.volume = validated_data.get('volume', None)
+        instance.edition = validated_data.get('edition', None)
+        instance.isbn = validated_data.get('isbn', None)
+        instance.publisher = validated_data.get('publisher', None)
+        instance.doi = validated_data.get('doi', None)
+        instance.url = validated_data.get('url', None)
+        instance.initial_page = validated_data.get('initial_page', None)
+        instance.last_page = validated_data.get('last_page', None)
+        instance.date_accessed = validated_data.get('date_accessed', None)
+        instance.save()
+        return instance
+
+
 class MeasureSerializer(serializers.ModelSerializer):
     value = ValueSerializer(required=False)
+    reference = ReferenceSerializer(required=False)
 
     class Meta:
         model = Measure
-        fields = ('value', 'unit', 'name')
+        fields = ('value', 'unit', 'name', 'reference')
 
     def create(self, validated_data):
         value = validated_data.pop('value', None)
@@ -317,7 +367,14 @@ class MeasureSerializer(serializers.ModelSerializer):
                 value = serializer.save()
             else:
                 print(serializer.errors)
-        measure = Measure.objects.create(value=value, **validated_data)
+        reference = validated_data.pop('reference', None)
+        if reference:
+            serializer = ReferenceSerializer(data=reference)
+            if serializer.is_valid():
+                reference = serializer.save()
+            else:
+                print(serializer.errors)
+        measure = Measure.objects.create(value=value, reference=reference **validated_data)
         return measure
 
     def update(self, instance, validated_data):
@@ -327,6 +384,14 @@ class MeasureSerializer(serializers.ModelSerializer):
             if serializer.is_valid():
                 value = serializer.save()
                 instance.value = value
+            else:
+                print(serializer.errors)
+        reference = validated_data.get('reference', None)
+        if reference:
+            serializer = ReferenceSerializer(instance.reference, data=reference)
+            if serializer.is_valid():
+                reference = serializer.save()
+                instance.reference = reference
             else:
                 print(serializer.errors)
         instance.name = validated_data.get('name', None)
@@ -483,58 +548,6 @@ class ReproductionSerializer(serializers.ModelSerializer):
         instance.types.set(types)
         instance.save()
         return instance
-
-
-class ReferenceSerializer(serializers.ModelSerializer):
-    authors = AuthorSerializer(many=True, required=False)
-
-    class Meta:
-        model = Reference
-        exclude = ('id',)
-
-    def create(self, validated_data):
-        authors_data = validated_data.pop('authors', [])
-        reference = Reference.objects.create(**validated_data)
-        authors = []
-        for author in authors_data:
-            serializer = AuthorSerializer(data=author)
-            if serializer.is_valid():
-                au = serializer.save()
-                authors.append(au)
-            else:
-                print(serializer.errors)
-        reference.authors.set(authors)
-        return reference
-
-    def update(self, instance, validated_data):
-        authors_data = validated_data.pop('authors', [])
-        authors = []
-        instance.authors.all().delete()
-        for author in authors_data:
-            serializer = AuthorSerializer(data=author)
-            if serializer.is_valid():
-                au = serializer.save()
-                authors.append(au)
-            else:
-                print(serializer.errors)
-        instance.authors.set(authors)
-        instance.referenced = validated_data.get('referenced', None)
-        instance.type = validated_data.get('type', None)
-        instance.title = validated_data.get('title', None)
-        instance.year = validated_data.get('year', None)
-        instance.series = validated_data.get('series', None)
-        instance.volume = validated_data.get('volume', None)
-        instance.edition = validated_data.get('edition', None)
-        instance.isbn = validated_data.get('isbn', None)
-        instance.publisher = validated_data.get('publisher', None)
-        instance.doi = validated_data.get('doi', None)
-        instance.url = validated_data.get('url', None)
-        instance.initial_page = validated_data.get('initial_page', None)
-        instance.last_page = validated_data.get('last_page', None)
-        instance.date_accessed = validated_data.get('date_accessed', None)
-        instance.save()
-        return instance
-
 
 class BirdImageSerializer(serializers.ModelSerializer):
     author = AuthorSerializer(required=False)
@@ -741,10 +754,11 @@ class DistributionSerializer(serializers.ModelSerializer):
 class SubspeciesSerializer(serializers.ModelSerializer):
     names = SubspeciesNameSerializer(required=False, many=True)
     distribution = DistributionSerializer(required=False)
+    images = BirdImageSerializer(many=True, required=False)
 
     class Meta:
         model = Subspecies
-        fields = ('names', 'distribution')
+        fields = ('names', 'distribution', 'images')
 
     def create(self, validated_data):
         distribution = validated_data.pop('distribution', None)
@@ -755,6 +769,7 @@ class SubspeciesSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         names_data = validated_data.pop('names', [])
+        images_data = validated_data.pop('images', [])
         subspecies = Subspecies.objects.create(distribution=distribution)
         names = []
         for name in names_data:
@@ -765,6 +780,15 @@ class SubspeciesSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         subspecies.names.set(names)
+        images = []
+        for image in images_data:
+            serializer = BirdImageSerializer(data=image)
+            if serializer.is_valid():
+                im = serializer.save()
+                images.append(im)
+            else:
+                print(serializer.errors)
+        subspecies.images.set(images)
         return subspecies
 
     def update(self, instance, validated_data):
@@ -787,6 +811,17 @@ class SubspeciesSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         instance.names.set(names)
+        instance.images.all().delete()
+        images_data = validated_data.pop('images', [])
+        images = []
+        for image in images_data:
+            serializer = BirdImageSerializer(data=image)
+            if serializer.is_valid():
+                si = serializer.save()
+                images.append(si)
+            else:
+                print(serializer.errors)
+        instance.images.set(images)
         instance.save()
         return instance
 
@@ -812,6 +847,7 @@ class BirdSerializer(serializers.ModelSerializer):
     similar_species = SimilarSpeciesSerializer(required=False)
     references = ReferenceSerializer(required=False, many=True)
     own_citation = ReferenceSerializer(required=False)
+    authors = PrimaryKeyRelatedField(many=True, queryset=Author.objects.all(), required=False)
 
     class Meta:
         model = Bird
@@ -891,6 +927,7 @@ class BirdSerializer(serializers.ModelSerializer):
         feeding_data = validated_data.pop('feeding', [])
         behavior_data = validated_data.pop('behavior', [])
         references_data = validated_data.pop('references', [])
+        authors_data = validated_data.pop('authors', [])
         bird = Bird.objects.create(family=family, description=description, identification=identification,
                                    distribution=distribution, migration=migration, habitat=habitat,
                                    reproduction=reproduction, taxonomy=taxonomy, conservation=conservation,
@@ -977,6 +1014,10 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         bird.references.set(references)
+        authors = []
+        for au in authors_data:
+            authors.append(au)
+        bird.authors.set(authors)
         return bird
 
     def update(self, instance, validated_data):
@@ -1048,6 +1089,7 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         similar_species = validated_data.pop('similar_species', None)
+        similar_species['bird_ids'] = [ss.id for ss in similar_species['bird_ids']]
         if similar_species:
             serializer = SimilarSpeciesSerializer(instance.similar_species, data=similar_species)
             if serializer.is_valid():
@@ -1163,6 +1205,11 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         instance.references.set(references)
+        authors_data = validated_data.pop('authors', [])
+        authors = []
+        for au in authors_data:
+            authors.append(au)
+        instance.authors.set(authors)
         instance.save()
         return instance
 

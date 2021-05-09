@@ -140,9 +140,16 @@ class Bird(models.Model):
     references = models.ManyToManyField(Reference, through='ReferencesBird', related_name='bird_refs')
     migration = models.ForeignKey(Type, related_name='bird_migration', null=True, on_delete=models.SET_NULL)
     own_citation = models.ForeignKey(Reference, related_name='bird', null=True, on_delete=models.SET_NULL)
-    last_updated = models.DateTimeField(auto_now=True)
     similar_species = models.ForeignKey('SimilarSpecies', related_name='bird', null=True, on_delete=models.SET_NULL)
     similar_species_class_id = models.ForeignKey('SimilarSpecies', related_name='bird_ids', null=True, on_delete=models.SET_NULL)
+    authors = models.ManyToManyField(Author, through='AuthorBird', related_name='bird_authors')
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+
+
+class AuthorBird(models.Model):
+    author = models.ForeignKey(Author, related_name='authors_bird', null=True, on_delete=models.SET_NULL)
+    bird = models.ForeignKey(Bird, related_name='authors_bird', null=True, on_delete=models.SET_NULL)
 
 
 class SimilarSpecies(models.Model):
@@ -169,15 +176,18 @@ class BirdImage(Image):
     BIRD = 'BIRD'
     FAMILY = 'FAMILY'
     ORDER = 'ORDER'
+    SUBSPECIES = 'SUBSPECIES'
     CATEGORY_CHOICES = (
         ('BIRD', BIRD),
         ('FAMILY', FAMILY),
         ('ORDER', ORDER),
+        ('SUBSPECIES', SUBSPECIES),
     )
-    category = models.CharField(max_length=6, choices=CATEGORY_CHOICES, null=True, blank=True)
+    category = models.CharField(max_length=10, choices=CATEGORY_CHOICES, null=True, blank=True)
     location = models.PointField(null=True, blank=True)
     main = models.BooleanField(default=False)
     bird = models.ForeignKey(Bird, related_name='images', null=True, on_delete=models.SET_NULL)
+    subspecies = models.ForeignKey(Subspecies, related_name='images', null=True, on_delete=models.SET_NULL)
     author = models.ForeignKey(Author, related_name='images_authored', null=True, on_delete=models.SET_NULL)
 
 
@@ -235,8 +245,9 @@ class Measure(models.Model):
         ('kg', KG),
     )
     value = models.ForeignKey(Value, null=True, related_name='measure', on_delete=models.SET_NULL)
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=50) # in spanish
     unit = models.CharField(max_length=2, choices=UNIT_CHOICES)
+    reference = models.ForeignKey(Reference, related_name='measures', null=True, on_delete=models.SET_NULL)
     identification_lengths = models.ForeignKey(Identification, related_name='lengths', null=True,
                                                on_delete=models.SET_NULL)
     identification_weights = models.ForeignKey(Identification, related_name='weights', null=True,
