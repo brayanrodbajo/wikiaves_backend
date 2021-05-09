@@ -4,7 +4,7 @@ from rest_framework.relations import PrimaryKeyRelatedField
 
 from birds.models import Text, Author, Image, ScientificNameOrder, ScientificNameFamily, CommonNameBird, \
     ScientificNameBird, Order, Family, Identification, Type, Measure, Value, Reproduction, Reference, Bird, Video, \
-    BirdImage, Audio, Subspecies, SubspeciesName, Vocalization, Distribution
+    BirdImage, Audio, Subspecies, SubspeciesName, Vocalization, Distribution, SimilarSpecies
 
 
 class TextSerializer(serializers.ModelSerializer):
@@ -103,6 +103,50 @@ class CommonNameBirdSerializer(serializers.ModelSerializer):
         return instance
 
 
+class SimilarSpeciesSerializer(serializers.ModelSerializer):
+    text = TextSerializer(required=False)
+    bird_ids = PrimaryKeyRelatedField(many=True, queryset=Bird.objects.all(), required=False)
+
+    class Meta:
+        model = SimilarSpecies
+        fields = ('text', 'bird_ids')
+
+    def create(self, validated_data):
+        text = validated_data.pop('text', None)
+        if text:
+            serializer = TextSerializer(data=text)
+            if serializer.is_valid():
+                text = serializer.save()
+            else:
+                print(serializer.errors)
+        similar_species_data = validated_data.pop('bird_ids', [])
+        bird_ids = []
+        for ss in similar_species_data:
+            if isinstance(ss, Bird):
+                bird_ids.append(ss)
+        obj = SimilarSpecies.objects.create(text=text)
+        obj.bird_ids.set(bird_ids)
+        return obj
+
+    def update(self, instance, validated_data):
+        text = validated_data.get('text', None)
+        if text:
+            serializer = TextSerializer(instance.text, data=text)
+            if serializer.is_valid():
+                text = serializer.save()
+                instance.text = text
+            else:
+                print(serializer.errors)
+        similar_species_data = validated_data.pop('bird_ids', [])
+        bird_ids = []
+        for ss in similar_species_data:
+            if isinstance(ss, Bird):
+                bird_ids.append(ss)
+        instance.bird_ids.set(bird_ids)
+        instance.save()
+        return instance
+
+
 class ScientificNameBirdSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -149,6 +193,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class FamilySerializer(serializers.ModelSerializer):
     scientific_names = ScientificNameFamilySerializer(required=False, many=True)
+    order = PrimaryKeyRelatedField(queryset=Order.objects.all(), required=False)
 
     class Meta:
         model = Family
@@ -156,10 +201,6 @@ class FamilySerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         order = validated_data.pop('order', None)
-        if order:
-            if not Order.objects.filter(id=order.id).exists():
-                print("ERROR: order", order.id, "does not exist")
-                order = None
         scientific_names_data = validated_data.pop('scientific_names', [])
         family = Family.objects.create(order=order, **validated_data)
         scientific_names = []
@@ -176,10 +217,7 @@ class FamilySerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         order = validated_data.get('order', None)
         if order:
-            if Order.objects.filter(id=order.id).exists():
-                instance.order = order
-            else:
-                print("ERROR: order", order.id, "does not exist")
+            instance.order = order
         scientific_names_data = validated_data.get('scientific_names', [])
         scientific_names = []
         instance.scientific_names.all().delete()
@@ -754,6 +792,7 @@ class SubspeciesSerializer(serializers.ModelSerializer):
 
 
 class BirdSerializer(serializers.ModelSerializer):
+    family = PrimaryKeyRelatedField(queryset=Family.objects.all(), required=False)
     subspecies = SubspeciesSerializer(required=False, many=True)
     common_names = CommonNameBirdSerializer(required=False, many=True)
     scientific_names = ScientificNameBirdSerializer(required=False, many=True)
@@ -770,7 +809,7 @@ class BirdSerializer(serializers.ModelSerializer):
     behavior = TypeSerializer(many=True, required=False)
     taxonomy = TextSerializer(required=False)
     conservation = TypeSerializer(required=False)
-    similar_species = PrimaryKeyRelatedField(many=True, queryset=Bird.objects.all(), required=False)
+    similar_species = SimilarSpeciesSerializer(required=False)
     references = ReferenceSerializer(required=False, many=True)
     own_citation = ReferenceSerializer(required=False)
 
@@ -784,10 +823,6 @@ class BirdSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         family = validated_data.pop('family', None)
-        if family:
-            if not Family.objects.filter(id=family.id).exists():
-                print("ERROR: family", family.id, "does not exist")
-                family = None
         description = validated_data.pop('description', None)
         if description:
             description = Text.objects.create(**description)
@@ -832,6 +867,14 @@ class BirdSerializer(serializers.ModelSerializer):
                 conservation = serializer.save()
             else:
                 print(serializer.errors)
+        similar_species = validated_data.pop('similar_species', None)
+        similar_species['bird_ids'] = [ss.id for ss in similar_species['bird_ids']]
+        if similar_species:
+            serializer = SimilarSpeciesSerializer(data=similar_species)
+            if serializer.is_valid():
+                similar_species = serializer.save()
+            else:
+                print(serializer.errors)
         own_citation = validated_data.pop('own_citation', None)
         if own_citation:
             serializer = ReferenceSerializer(data=own_citation)
@@ -847,12 +890,11 @@ class BirdSerializer(serializers.ModelSerializer):
         vocalizations_data = validated_data.pop('vocalizations', [])
         feeding_data = validated_data.pop('feeding', [])
         behavior_data = validated_data.pop('behavior', [])
-        similar_species_data = validated_data.pop('similar_species', [])
         references_data = validated_data.pop('references', [])
         bird = Bird.objects.create(family=family, description=description, identification=identification,
                                    distribution=distribution, migration=migration, habitat=habitat,
                                    reproduction=reproduction, taxonomy=taxonomy, conservation=conservation,
-                                   own_citation=own_citation, **validated_data)
+                                   similar_species=similar_species, own_citation=own_citation, **validated_data)
 
         subspecies = []
         for subs in subspecies_data:
@@ -926,11 +968,6 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         bird.behavior.set(behavior)
-        similar_species = []
-        for ss in similar_species_data:
-            if isinstance(ss, Bird):
-                similar_species.append(ss)
-        bird.similar_species.set(similar_species)
         references = []
         for ref in references_data:
             serializer = ReferenceSerializer(data=ref)
@@ -945,10 +982,7 @@ class BirdSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         family = validated_data.pop('family', None)
         if family:
-            if Family.objects.filter(id=family.id).exists():
-                instance.family = family
-            else:
-                print("ERROR: family", family.id, "does not exist")
+            instance.family = family
         description = validated_data.pop('description', None)
         if description:
             serializer = TextSerializer(instance.description, data=description)
@@ -1011,6 +1045,14 @@ class BirdSerializer(serializers.ModelSerializer):
             if serializer.is_valid():
                 conservation = serializer.save()
                 instance.conservation = conservation
+            else:
+                print(serializer.errors)
+        similar_species = validated_data.pop('similar_species', None)
+        if similar_species:
+            serializer = SimilarSpeciesSerializer(instance.similar_species, data=similar_species)
+            if serializer.is_valid():
+                similar_species = serializer.save()
+                instance.similar_species = similar_species
             else:
                 print(serializer.errors)
         own_citation = validated_data.pop('own_citation', None)
@@ -1110,12 +1152,6 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         instance.behavior.set(behavior)
-        similar_species_data = validated_data.pop('similar_species', [])
-        similar_species = []
-        for ss in similar_species_data:
-            if isinstance(ss, Bird):
-                similar_species.append(ss)
-        instance.similar_species.set(similar_species)
         instance.references.all().delete()
         references_data = validated_data.pop('references', [])
         references = []

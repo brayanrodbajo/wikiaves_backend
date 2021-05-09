@@ -141,7 +141,12 @@ class Bird(models.Model):
     migration = models.ForeignKey(Type, related_name='bird_migration', null=True, on_delete=models.SET_NULL)
     own_citation = models.ForeignKey(Reference, related_name='bird', null=True, on_delete=models.SET_NULL)
     last_updated = models.DateTimeField(auto_now=True)
-    similar_species = models.ManyToManyField('self', blank=True)
+    similar_species = models.ForeignKey('SimilarSpecies', related_name='bird', null=True, on_delete=models.SET_NULL)
+    similar_species_class_id = models.ForeignKey('SimilarSpecies', related_name='bird_ids', null=True, on_delete=models.SET_NULL)
+
+
+class SimilarSpecies(models.Model):
+    text = models.ForeignKey(Text, related_name='similar_species', null=True, on_delete=models.SET_NULL)
 
 
 class ReferencesBird(models.Model):
