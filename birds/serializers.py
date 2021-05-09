@@ -139,7 +139,6 @@ class SimilarSpeciesSerializer(serializers.ModelSerializer):
                 instance.text = text
             else:
                 print(serializer.errors)
-        instance.bird_ids.all().delete()
         similar_species_data = validated_data.pop('bird_ids', [])
         bird_ids = []
         for ss in similar_species_data:
@@ -750,7 +749,7 @@ class SubspeciesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subspecies
-        fields = ('names', 'distribution')
+        fields = ('names', 'distribution', 'images')
 
     def create(self, validated_data):
         distribution = validated_data.pop('distribution', None)
@@ -1084,6 +1083,7 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         similar_species = validated_data.pop('similar_species', None)
+        similar_species['bird_ids'] = [ss.id for ss in similar_species['bird_ids']]
         if similar_species:
             serializer = SimilarSpeciesSerializer(instance.similar_species, data=similar_species)
             if serializer.is_valid():
@@ -1199,7 +1199,6 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         instance.references.set(references)
-        instance.authors.all().delete()
         authors_data = validated_data.pop('authors', [])
         authors = []
         for au in authors_data:
