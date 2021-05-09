@@ -137,6 +137,7 @@ class SimilarSpeciesSerializer(serializers.ModelSerializer):
                 instance.text = text
             else:
                 print(serializer.errors)
+        instance.bird_ids.all().delete()
         similar_species_data = validated_data.pop('bird_ids', [])
         bird_ids = []
         for ss in similar_species_data:
@@ -741,6 +742,7 @@ class DistributionSerializer(serializers.ModelSerializer):
 class SubspeciesSerializer(serializers.ModelSerializer):
     names = SubspeciesNameSerializer(required=False, many=True)
     distribution = DistributionSerializer(required=False)
+    images = BirdImageSerializer(many=True, required=False)
 
     class Meta:
         model = Subspecies
@@ -755,6 +757,7 @@ class SubspeciesSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         names_data = validated_data.pop('names', [])
+        images_data = validated_data.pop('images', [])
         subspecies = Subspecies.objects.create(distribution=distribution)
         names = []
         for name in names_data:
@@ -765,6 +768,15 @@ class SubspeciesSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         subspecies.names.set(names)
+        images = []
+        for image in images_data:
+            serializer = BirdImageSerializer(data=image)
+            if serializer.is_valid():
+                im = serializer.save()
+                images.append(im)
+            else:
+                print(serializer.errors)
+        subspecies.images.set(images)
         return subspecies
 
     def update(self, instance, validated_data):
@@ -787,6 +799,17 @@ class SubspeciesSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         instance.names.set(names)
+        instance.images.all().delete()
+        images_data = validated_data.pop('images', [])
+        images = []
+        for image in images_data:
+            serializer = BirdImageSerializer(data=image)
+            if serializer.is_valid():
+                si = serializer.save()
+                images.append(si)
+            else:
+                print(serializer.errors)
+        instance.images.set(images)
         instance.save()
         return instance
 
