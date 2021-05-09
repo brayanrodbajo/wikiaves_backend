@@ -122,10 +122,7 @@ class SimilarSpeciesSerializer(serializers.ModelSerializer):
         similar_species_data = validated_data.pop('bird_ids', [])
         bird_ids = []
         for ss in similar_species_data:
-            if isinstance(ss, Bird):
-                bird_ids.append(ss)
-            else:
-                print("ERROR:", ss, "is not bird")
+            bird_ids.append(ss)
         obj = SimilarSpecies.objects.create(text=text)
         obj.bird_ids.set(bird_ids)
         return obj
@@ -142,10 +139,7 @@ class SimilarSpeciesSerializer(serializers.ModelSerializer):
         similar_species_data = validated_data.pop('bird_ids', [])
         bird_ids = []
         for ss in similar_species_data:
-            if isinstance(ss, Bird):
-                bird_ids.append(ss)
-            else:
-                print("ERROR:", ss, "is not bird")
+            bird_ids.append(ss)
         instance.bird_ids.set(bird_ids)
         instance.save()
         return instance
@@ -306,12 +300,64 @@ class ValueSerializer(serializers.ModelSerializer):
         exclude = ('id',)
 
 
+class ReferenceSerializer(serializers.ModelSerializer):
+    authors = AuthorSerializer(many=True, required=False)
+
+    class Meta:
+        model = Reference
+        exclude = ('id',)
+
+    def create(self, validated_data):
+        authors_data = validated_data.pop('authors', [])
+        reference = Reference.objects.create(**validated_data)
+        authors = []
+        for author in authors_data:
+            serializer = AuthorSerializer(data=author)
+            if serializer.is_valid():
+                au = serializer.save()
+                authors.append(au)
+            else:
+                print(serializer.errors)
+        reference.authors.set(authors)
+        return reference
+
+    def update(self, instance, validated_data):
+        authors_data = validated_data.pop('authors', [])
+        authors = []
+        instance.authors.all().delete()
+        for author in authors_data:
+            serializer = AuthorSerializer(data=author)
+            if serializer.is_valid():
+                au = serializer.save()
+                authors.append(au)
+            else:
+                print(serializer.errors)
+        instance.authors.set(authors)
+        instance.referenced = validated_data.get('referenced', None)
+        instance.type = validated_data.get('type', None)
+        instance.title = validated_data.get('title', None)
+        instance.year = validated_data.get('year', None)
+        instance.series = validated_data.get('series', None)
+        instance.volume = validated_data.get('volume', None)
+        instance.edition = validated_data.get('edition', None)
+        instance.isbn = validated_data.get('isbn', None)
+        instance.publisher = validated_data.get('publisher', None)
+        instance.doi = validated_data.get('doi', None)
+        instance.url = validated_data.get('url', None)
+        instance.initial_page = validated_data.get('initial_page', None)
+        instance.last_page = validated_data.get('last_page', None)
+        instance.date_accessed = validated_data.get('date_accessed', None)
+        instance.save()
+        return instance
+
+
 class MeasureSerializer(serializers.ModelSerializer):
     value = ValueSerializer(required=False)
+    reference = ReferenceSerializer(required=False)
 
     class Meta:
         model = Measure
-        fields = ('value', 'unit', 'name')
+        fields = ('value', 'unit', 'name', 'reference')
 
     def create(self, validated_data):
         value = validated_data.pop('value', None)
@@ -321,7 +367,14 @@ class MeasureSerializer(serializers.ModelSerializer):
                 value = serializer.save()
             else:
                 print(serializer.errors)
-        measure = Measure.objects.create(value=value, **validated_data)
+        reference = validated_data.pop('reference', None)
+        if reference:
+            serializer = ReferenceSerializer(data=reference)
+            if serializer.is_valid():
+                reference = serializer.save()
+            else:
+                print(serializer.errors)
+        measure = Measure.objects.create(value=value, reference=reference **validated_data)
         return measure
 
     def update(self, instance, validated_data):
@@ -331,6 +384,14 @@ class MeasureSerializer(serializers.ModelSerializer):
             if serializer.is_valid():
                 value = serializer.save()
                 instance.value = value
+            else:
+                print(serializer.errors)
+        reference = validated_data.get('reference', None)
+        if reference:
+            serializer = ReferenceSerializer(instance.reference, data=reference)
+            if serializer.is_valid():
+                reference = serializer.save()
+                instance.reference = reference
             else:
                 print(serializer.errors)
         instance.name = validated_data.get('name', None)
@@ -487,58 +548,6 @@ class ReproductionSerializer(serializers.ModelSerializer):
         instance.types.set(types)
         instance.save()
         return instance
-
-
-class ReferenceSerializer(serializers.ModelSerializer):
-    authors = AuthorSerializer(many=True, required=False)
-
-    class Meta:
-        model = Reference
-        exclude = ('id',)
-
-    def create(self, validated_data):
-        authors_data = validated_data.pop('authors', [])
-        reference = Reference.objects.create(**validated_data)
-        authors = []
-        for author in authors_data:
-            serializer = AuthorSerializer(data=author)
-            if serializer.is_valid():
-                au = serializer.save()
-                authors.append(au)
-            else:
-                print(serializer.errors)
-        reference.authors.set(authors)
-        return reference
-
-    def update(self, instance, validated_data):
-        authors_data = validated_data.pop('authors', [])
-        authors = []
-        instance.authors.all().delete()
-        for author in authors_data:
-            serializer = AuthorSerializer(data=author)
-            if serializer.is_valid():
-                au = serializer.save()
-                authors.append(au)
-            else:
-                print(serializer.errors)
-        instance.authors.set(authors)
-        instance.referenced = validated_data.get('referenced', None)
-        instance.type = validated_data.get('type', None)
-        instance.title = validated_data.get('title', None)
-        instance.year = validated_data.get('year', None)
-        instance.series = validated_data.get('series', None)
-        instance.volume = validated_data.get('volume', None)
-        instance.edition = validated_data.get('edition', None)
-        instance.isbn = validated_data.get('isbn', None)
-        instance.publisher = validated_data.get('publisher', None)
-        instance.doi = validated_data.get('doi', None)
-        instance.url = validated_data.get('url', None)
-        instance.initial_page = validated_data.get('initial_page', None)
-        instance.last_page = validated_data.get('last_page', None)
-        instance.date_accessed = validated_data.get('date_accessed', None)
-        instance.save()
-        return instance
-
 
 class BirdImageSerializer(serializers.ModelSerializer):
     author = AuthorSerializer(required=False)
@@ -1007,10 +1016,7 @@ class BirdSerializer(serializers.ModelSerializer):
         bird.references.set(references)
         authors = []
         for au in authors_data:
-            if isinstance(au, Author):
-                authors.append(au)
-            else:
-                print("ERROR:", au, "is not author")
+            authors.append(au)
         bird.authors.set(authors)
         return bird
 
@@ -1202,10 +1208,7 @@ class BirdSerializer(serializers.ModelSerializer):
         authors_data = validated_data.pop('authors', [])
         authors = []
         for au in authors_data:
-            if isinstance(au, Author):
-                authors.append(au)
-            else:
-                print("ERROR:", au, "is not author")
+            authors.append(au)
         instance.authors.set(authors)
         instance.save()
         return instance

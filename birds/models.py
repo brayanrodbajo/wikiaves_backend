@@ -245,8 +245,9 @@ class Measure(models.Model):
         ('kg', KG),
     )
     value = models.ForeignKey(Value, null=True, related_name='measure', on_delete=models.SET_NULL)
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=50) # in spanish
     unit = models.CharField(max_length=2, choices=UNIT_CHOICES)
+    reference = models.ForeignKey(Reference, related_name='measures', null=True, on_delete=models.SET_NULL)
     identification_lengths = models.ForeignKey(Identification, related_name='lengths', null=True,
                                                on_delete=models.SET_NULL)
     identification_weights = models.ForeignKey(Identification, related_name='weights', null=True,
