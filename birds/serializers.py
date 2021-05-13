@@ -374,7 +374,7 @@ class MeasureSerializer(serializers.ModelSerializer):
                 reference = serializer.save()
             else:
                 print(serializer.errors)
-        measure = Measure.objects.create(value=value, reference=reference **validated_data)
+        measure = Measure.objects.create(value=value, reference=reference, **validated_data)
         return measure
 
     def update(self, instance, validated_data):
