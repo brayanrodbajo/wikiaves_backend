@@ -904,8 +904,8 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         similar_species = validated_data.pop('similar_species', None)
-        similar_species['bird_ids'] = [ss.id for ss in similar_species['bird_ids']]
         if similar_species:
+            similar_species['bird_ids'] = [ss.id for ss in similar_species['bird_ids']]
             serializer = SimilarSpeciesSerializer(data=similar_species)
             if serializer.is_valid():
                 similar_species = serializer.save()
