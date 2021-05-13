@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from rest_condition import Or
-from rest_framework import generics, viewsets, views, status
+from rest_framework import generics, viewsets, views, status, filters
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView, CreateAPIView
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
 from rest_framework.pagination import LimitOffsetPagination
@@ -16,6 +16,9 @@ class Birds(ListCreateAPIView):
     serializer_class = BirdSerializer
     pagination_class = LimitOffsetPagination
     permission_classes = (AdminCustomPermission, )
+    search_fields = ['scientific_names__name', 'common_names__name__text',
+                     'family__scientific_names__name', 'family__order__scientific_names__name']
+    filter_backends = (filters.SearchFilter,)
 
     def get_queryset(self):
         queryset = Bird.objects.all()
