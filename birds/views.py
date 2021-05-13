@@ -39,6 +39,8 @@ class Orders(ListCreateAPIView):
     serializer_class = OrderSerializer
     pagination_class = LimitOffsetPagination
     permission_classes = (AdminCustomPermission, )
+    search_fields = ['scientific_names__name']
+    filter_backends = (filters.SearchFilter,)
 
 
 class SingleOrder(RetrieveUpdateDestroyAPIView):
@@ -52,6 +54,8 @@ class Families(ListCreateAPIView):
     serializer_class = FamilySerializer
     pagination_class = LimitOffsetPagination
     permission_classes = (AdminCustomPermission, )
+    search_fields = ['scientific_names__name']
+    filter_backends = (filters.SearchFilter,)
 
     def get_queryset(self):
         queryset = Family.objects.all()
