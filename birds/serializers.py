@@ -703,10 +703,12 @@ class SubspeciesSerializer(serializers.ModelSerializer):
     names = SubspeciesNameSerializer(required=False, many=True)
     distribution = DistributionSerializer(required=False)
     images = BirdImageSerializer(many=True, required=False)
+    lengths = MeasureSerializer(required=False, many=True)
+    weights = MeasureSerializer(required=False, many=True)
 
     class Meta:
         model = Subspecies
-        fields = ('names', 'distribution', 'images')
+        fields = ('names', 'distribution', 'images','lengths', 'weights')
 
     def create(self, validated_data):
         distribution = validated_data.pop('distribution', None)
@@ -718,6 +720,8 @@ class SubspeciesSerializer(serializers.ModelSerializer):
                 print(serializer.errors)
         names_data = validated_data.pop('names', [])
         images_data = validated_data.pop('images', [])
+        lengths_data = validated_data.pop('lengths', [])
+        weights_data = validated_data.pop('weights', [])
         subspecies = Subspecies.objects.create(distribution=distribution)
         names = []
         for name in names_data:
@@ -737,6 +741,24 @@ class SubspeciesSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         subspecies.images.set(images)
+        lengths = []
+        for len in lengths_data:
+            serializer = MeasureSerializer(data=len)
+            if serializer.is_valid():
+                obj = serializer.save()
+                lengths.append(obj)
+            else:
+                print(serializer.errors)
+        subspecies.lengths.set(lengths)
+        weights = []
+        for wei in weights_data:
+            serializer = MeasureSerializer(data=wei)
+            if serializer.is_valid():
+                obj = serializer.save()
+                weights.append(obj)
+            else:
+                print(serializer.errors)
+        subspecies.weights.set(weights)
         return subspecies
 
     def update(self, instance, validated_data):
@@ -770,6 +792,28 @@ class SubspeciesSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         instance.images.set(images)
+        lengths_data = validated_data.pop('lengths', [])
+        lengths = []
+        instance.lengths.all().delete()
+        for len in lengths_data:
+            serializer = MeasureSerializer(data=len)
+            if serializer.is_valid():
+                obj = serializer.save()
+                lengths.append(obj)
+            else:
+                print(serializer.errors)
+        instance.lengths.set(lengths)
+        weights_data = validated_data.pop('weights', [])
+        weights = []
+        instance.weights.all().delete()
+        for wei in weights_data:
+            serializer = MeasureSerializer(data=wei)
+            if serializer.is_valid():
+                obj = serializer.save()
+                weights.append(obj)
+            else:
+                print(serializer.errors)
+        instance.weights.set(weights)
         instance.save()
         return instance
 
