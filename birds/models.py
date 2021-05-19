@@ -79,12 +79,8 @@ class Type(models.Model):
     text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='type_text')
     identification = models.ForeignKey(Identification, null=True, on_delete=models.SET_NULL, related_name='plumage')
     bird_feeding = models.ForeignKey('Bird', null=True, on_delete=models.SET_NULL, related_name='feeding')
-    reproduction = models.ForeignKey('Reproduction', null=True, on_delete=models.SET_NULL, related_name='types')
+    reproduction = models.ForeignKey('Bird', null=True, on_delete=models.SET_NULL, related_name='reproduction')
     bird_behavior = models.ForeignKey('Bird', null=True, on_delete=models.SET_NULL, related_name='behavior')
-
-
-class Reproduction(models.Model):
-    text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='reproduction')
 
 
 class Image(models.Model):
@@ -134,7 +130,6 @@ class Bird(models.Model):
     identification = models.ForeignKey(Identification, related_name='bird', null=True, on_delete=models.SET_NULL)
     distribution = models.ForeignKey(Distribution, null=True, on_delete=models.SET_NULL, related_name='birds_dist')
     habitat = models.ForeignKey(Text, related_name='bird', null=True, on_delete=models.SET_NULL)
-    reproduction = models.ForeignKey(Reproduction, related_name='bird', null=True, on_delete=models.SET_NULL)
     taxonomy = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='birds_tax')
     conservation = models.ForeignKey(Type, related_name='bird_conservation', null=True, on_delete=models.SET_NULL)
     references = models.ManyToManyField(Reference, through='ReferencesBird', related_name='bird_refs')

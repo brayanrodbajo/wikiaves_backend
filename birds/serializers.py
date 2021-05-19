@@ -3,7 +3,7 @@ from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 
 from birds.models import Text, Author, Image, ScientificNameOrder, ScientificNameFamily, CommonNameBird, \
-    ScientificNameBird, Order, Family, Identification, Type, Measure, Value, Reproduction, Reference, Bird, Video, \
+    ScientificNameBird, Order, Family, Identification, Type, Measure, Value, Reference, Bird, Video, \
     BirdImage, Audio, Subspecies, SubspeciesName, Vocalization, Distribution, SimilarSpecies
 
 
@@ -497,58 +497,6 @@ class IdentificationSerializer(serializers.ModelSerializer):
         return instance
 
 
-class ReproductionSerializer(serializers.ModelSerializer):
-    text = TextSerializer(required=False)
-    types = TypeSerializer(required=False, many=True)
-
-    class Meta:
-        model = Reproduction
-        exclude = ('id',)
-
-    def create(self, validated_data):
-        text = validated_data.pop('text', None)
-        types_data = validated_data.pop('types', [])
-        if text:
-            serializer = TextSerializer(data=text)
-            if serializer.is_valid():
-                text = serializer.save()
-            else:
-                print(serializer.errors)
-        reproduction = Reproduction.objects.create(text=text, **validated_data)
-        types = []
-        for len in types_data:
-            serializer = TypeSerializer(data=len)
-            if serializer.is_valid():
-                obj = serializer.save()
-                types.append(obj)
-            else:
-                print(serializer.errors)
-        reproduction.types.set(types)
-        return reproduction
-
-    def update(self, instance, validated_data):
-        text = validated_data.get('text', None)
-        if text:
-            serializer = TextSerializer(instance.text, data=text)
-            if serializer.is_valid():
-                text = serializer.save()
-                instance.text = text
-            else:
-                print(serializer.errors)
-        types_data = validated_data.get('types', [])
-        types = []
-        instance.types.all().delete()
-        for type in types_data:
-            serializer = TypeSerializer(data=type)
-            if serializer.is_valid():
-                obj = serializer.save()
-                types.append(obj)
-            else:
-                print(serializer.errors)
-        instance.types.set(types)
-        instance.save()
-        return instance
-
 class BirdImageSerializer(serializers.ModelSerializer):
     author = AuthorSerializer(required=False)
 
@@ -840,7 +788,7 @@ class BirdSerializer(serializers.ModelSerializer):
     migration = TypeSerializer(required=False)
     habitat = TextSerializer(required=False)
     feeding = TypeSerializer(many=True, required=False)
-    reproduction = ReproductionSerializer(required=False)
+    reproduction = TypeSerializer(required=False, many=True)
     behavior = TypeSerializer(many=True, required=False)
     taxonomy = TextSerializer(required=False)
     conservation = TypeSerializer(required=False)
@@ -886,13 +834,6 @@ class BirdSerializer(serializers.ModelSerializer):
         habitat = validated_data.pop('habitat', None)
         if habitat:
             habitat = Text.objects.create(**habitat)
-        reproduction = validated_data.pop('reproduction', None)
-        if reproduction:
-            serializer = ReproductionSerializer(data=reproduction)
-            if serializer.is_valid():
-                reproduction = serializer.save()
-            else:
-                print(serializer.errors)
         taxonomy = validated_data.pop('taxonomy', None)
         if taxonomy:
             taxonomy = Text.objects.create(**taxonomy)
@@ -925,12 +866,13 @@ class BirdSerializer(serializers.ModelSerializer):
         videos_data = validated_data.pop('videos', [])
         vocalizations_data = validated_data.pop('vocalizations', [])
         feeding_data = validated_data.pop('feeding', [])
+        reproduction_data = validated_data.pop('reproduction', [])
         behavior_data = validated_data.pop('behavior', [])
         references_data = validated_data.pop('references', [])
         authors_data = validated_data.pop('authors', [])
         bird = Bird.objects.create(family=family, description=description, identification=identification,
                                    distribution=distribution, migration=migration, habitat=habitat,
-                                   reproduction=reproduction, taxonomy=taxonomy, conservation=conservation,
+                                   taxonomy=taxonomy, conservation=conservation,
                                    similar_species=similar_species, own_citation=own_citation, **validated_data)
 
         subspecies = []
@@ -996,6 +938,15 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         bird.feeding.set(feeding)
+        reproduction = []
+        for repr in reproduction_data:
+            serializer = TypeSerializer(data=repr)
+            if serializer.is_valid():
+                obj = serializer.save()
+                reproduction.append(obj)
+            else:
+                print(serializer.errors)
+        bird.reproduction.set(reproduction)
         behavior = []
         for beh in behavior_data:
             serializer = TypeSerializer(data=beh)
@@ -1064,14 +1015,6 @@ class BirdSerializer(serializers.ModelSerializer):
                 instance.habitat = habitat
             else:
                 print(serializer.errors)
-        reproduction = validated_data.pop('reproduction', None)
-        if reproduction:
-            serializer = ReproductionSerializer(instance.reproduction, data=reproduction)
-            if serializer.is_valid():
-                reproduction = serializer.save()
-                instance.reproduction = reproduction
-            else:
-                print(serializer.errors)
         taxonomy = validated_data.pop('taxonomy', None)
         if taxonomy:
             serializer = TextSerializer(instance.taxonomy, data=taxonomy)
@@ -1089,8 +1032,8 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         similar_species = validated_data.pop('similar_species', None)
-        similar_species['bird_ids'] = [ss.id for ss in similar_species['bird_ids']]
         if similar_species:
+            similar_species['bird_ids'] = [ss.id for ss in similar_species['bird_ids']]
             serializer = SimilarSpeciesSerializer(instance.similar_species, data=similar_species)
             if serializer.is_valid():
                 similar_species = serializer.save()
@@ -1183,6 +1126,17 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         instance.feeding.set(feeding)
+        instance.reproduction.all().delete()
+        reproduction = []
+        reproduction_data = validated_data.pop('reproduction', [])
+        for repr in reproduction_data:
+            serializer = TypeSerializer(data=repr)
+            if serializer.is_valid():
+                obj = serializer.save()
+                reproduction.append(obj)
+            else:
+                print(serializer.errors)
+        instance.reproduction.set(reproduction)
         instance.behavior.all().delete()
         behavior_data = validated_data.pop('behavior', [])
         behavior = []

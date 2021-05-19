@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from birds.models import Text, Reference, Author, Order, Family, Identification, Reproduction, \
+from birds.models import Text, Reference, Author, Order, Family, Identification, \
     Bird, Image, Video, Audio, Value, Type, Subspecies, SubspeciesName, BirdImage, Measure, CommonNameBird, \
     Vocalization, Distribution
 
@@ -46,11 +46,6 @@ class HabitatAdmin(admin.ModelAdmin):
     list_display = ('name', 'image', 'text')
 
 
-@admin.register(Reproduction)
-class ReproductionAdmin(admin.ModelAdmin):
-    list_display = ('text',)
-
-
 @admin.register(Distribution)
 class DistributionAdmin(admin.ModelAdmin):
     list_display = ('text', 'location_map')
@@ -62,8 +57,8 @@ class CNInlineAdmin(admin.TabularInline):
 
 @admin.register(Bird)
 class BirdAdmin(admin.ModelAdmin):
-    list_display = ('id', 'family', 'description', 'identification', 'habitat',
-                    'reproduction', 'taxonomy', 'conservation',
+    list_display = ('id', 'family', 'description', 'identification',
+                    'habitat', 'taxonomy', 'conservation',
                     'own_citation', 'last_updated',)
     inlines = [CNInlineAdmin]
 
