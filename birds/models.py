@@ -21,6 +21,7 @@ class Reference(models.Model):
     AUDIO = 'AUDIO'
     VIDEO = 'VIDEO'
     BIRD = 'BIRD'
+    MEASURE = 'MEASURE'
     REFERENCED_CHOICES = (
         ('LITERATURE', LITERATURE),
         ('MAPS', MAP),
@@ -28,16 +29,17 @@ class Reference(models.Model):
         ('AUDIO', AUDIO),
         ('VIDEO', VIDEO),
         ('BIRD', BIRD),
+        ('MEASURE', MEASURE),
     )
     referenced = models.CharField(max_length=10, choices=REFERENCED_CHOICES)
     type = models.CharField(max_length=50, null=True, blank=True)
-    title = models.CharField(max_length=50, null=True, blank=True)
+    title = models.CharField(max_length=200, null=True, blank=True)
     year = models.IntegerField(null=True, blank=True)
     series = models.IntegerField(null=True, blank=True)
     volume = models.IntegerField(null=True, blank=True)
     edition = models.IntegerField(null=True, blank=True)
     isbn = models.CharField(max_length=13, null=True, blank=True)
-    publisher = models.CharField(max_length=13, null=True, blank=True)
+    publisher = models.CharField(max_length=50, null=True, blank=True)
     doi = models.URLField(null=True, blank=True)
     url = models.URLField(null=True, blank=True)
     initial_page = models.IntegerField(null=True, blank=True)
@@ -79,12 +81,8 @@ class Type(models.Model):
     text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='type_text')
     identification = models.ForeignKey(Identification, null=True, on_delete=models.SET_NULL, related_name='plumage')
     bird_feeding = models.ForeignKey('Bird', null=True, on_delete=models.SET_NULL, related_name='feeding')
-    reproduction = models.ForeignKey('Reproduction', null=True, on_delete=models.SET_NULL, related_name='types')
+    reproduction = models.ForeignKey('Bird', null=True, on_delete=models.SET_NULL, related_name='reproduction')
     bird_behavior = models.ForeignKey('Bird', null=True, on_delete=models.SET_NULL, related_name='behavior')
-
-
-class Reproduction(models.Model):
-    text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='reproduction')
 
 
 class Image(models.Model):
@@ -134,7 +132,6 @@ class Bird(models.Model):
     identification = models.ForeignKey(Identification, related_name='bird', null=True, on_delete=models.SET_NULL)
     distribution = models.ForeignKey(Distribution, null=True, on_delete=models.SET_NULL, related_name='birds_dist')
     habitat = models.ForeignKey(Text, related_name='bird', null=True, on_delete=models.SET_NULL)
-    reproduction = models.ForeignKey(Reproduction, related_name='bird', null=True, on_delete=models.SET_NULL)
     taxonomy = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='birds_tax')
     conservation = models.ForeignKey(Type, related_name='bird_conservation', null=True, on_delete=models.SET_NULL)
     references = models.ManyToManyField(Reference, through='ReferencesBird', related_name='bird_refs')
@@ -245,12 +242,16 @@ class Measure(models.Model):
         ('kg', KG),
     )
     value = models.ForeignKey(Value, null=True, related_name='measure', on_delete=models.SET_NULL)
-    name = models.CharField(max_length=50) # in spanish
+    name = models.CharField(max_length=100) # in spanish
     unit = models.CharField(max_length=2, choices=UNIT_CHOICES)
     reference = models.ForeignKey(Reference, related_name='measures', null=True, on_delete=models.SET_NULL)
     identification_lengths = models.ForeignKey(Identification, related_name='lengths', null=True,
                                                on_delete=models.SET_NULL)
     identification_weights = models.ForeignKey(Identification, related_name='weights', null=True,
+                                               on_delete=models.SET_NULL)
+    identification_lengths_subs = models.ForeignKey(Subspecies, related_name='lengths', null=True,
+                                               on_delete=models.SET_NULL)
+    identification_weights_subs = models.ForeignKey(Subspecies, related_name='weights', null=True,
                                                on_delete=models.SET_NULL)
 
 
