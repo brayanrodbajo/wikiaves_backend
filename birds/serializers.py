@@ -279,7 +279,7 @@ class TypeSerializer(serializers.ModelSerializer):
             serializer = ImageSerializer(instance.image, data=image)
             if serializer.is_valid():
                 image = serializer.save()
-                instance.text = image
+                instance.image = image
             else:
                 print(serializer.errors)
         text = validated_data.get('text', None)
@@ -487,10 +487,10 @@ class IdentificationSerializer(serializers.ModelSerializer):
         instance.weights.set(weights)
         description = validated_data.get('description', None)
         if description:
-            serializer = TextSerializer(instance.text, data=description)
+            serializer = TextSerializer(instance.description, data=description)
             if serializer.is_valid():
                 description = serializer.save()
-                instance.text = description
+                instance.description = description
             else:
                 print(serializer.errors)
         instance.save()
@@ -684,7 +684,7 @@ class DistributionSerializer(serializers.ModelSerializer):
             serializer = TextSerializer(instance.text, data=text)
             if serializer.is_valid():
                 text = serializer.save()
-                instance.name = text
+                instance.text = text
             else:
                 print(serializer.errors)
         location_map = validated_data.get('location_map', None)
@@ -692,7 +692,7 @@ class DistributionSerializer(serializers.ModelSerializer):
             serializer = ImageSerializer(instance.location_map, data=location_map)
             if serializer.is_valid():
                 location_map = serializer.save()
-                instance.name = location_map
+                instance.location_map = location_map
             else:
                 print(serializer.errors)
         instance.save()
