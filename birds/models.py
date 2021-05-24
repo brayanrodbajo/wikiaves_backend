@@ -86,7 +86,7 @@ class Type(models.Model):
 
 
 class Image(models.Model):
-    url = models.URLField(unique=True)
+    url = models.URLField()
     thumbnail = models.URLField(null=True, blank=True)
     format = models.CharField(max_length=4, null=True, blank=True)
     height = models.FloatField(null=True, blank=True)
@@ -197,7 +197,7 @@ class Video(models.Model):
         ('FAMILY', FAMILY),
         ('ORDER', ORDER),
     )
-    url = models.URLField(unique=True)
+    url = models.URLField()
     thumbnail = models.URLField(null=True, blank=True)
     category = models.CharField(max_length=6, choices=CATEGORY_CHOICES, null=True, blank=True)
     format = models.CharField(max_length=4)
@@ -208,7 +208,7 @@ class Video(models.Model):
 
 
 class Audio(models.Model):
-    url = models.URLField(unique=True)
+    url = models.URLField()
     author = models.ForeignKey(Author, related_name='audios_authored', null=True, on_delete=models.SET_NULL)
     format = models.CharField(max_length=4)
     location = models.PointField(null=True, blank=True)

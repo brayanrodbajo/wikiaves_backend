@@ -23,7 +23,7 @@ class ImageSerializer(serializers.ModelSerializer):
 
 
 class AuthorSerializer(serializers.ModelSerializer):
-    image = ImageSerializer(required=False)
+    image = ImageSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Author
@@ -72,7 +72,7 @@ class ScientificNameFamilySerializer(serializers.ModelSerializer):
 
 
 class CommonNameBirdSerializer(serializers.ModelSerializer):
-    name = TextSerializer(required=False)
+    name = TextSerializer(required=False, allow_null=True)
 
     class Meta:
         model = CommonNameBird
@@ -104,8 +104,8 @@ class CommonNameBirdSerializer(serializers.ModelSerializer):
 
 
 class SimilarSpeciesSerializer(serializers.ModelSerializer):
-    text = TextSerializer(required=False)
-    bird_ids = PrimaryKeyRelatedField(many=True, queryset=Bird.objects.all(), required=False)
+    text = TextSerializer(required=False, allow_null=True)
+    bird_ids = PrimaryKeyRelatedField(many=True, queryset=Bird.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = SimilarSpecies
@@ -153,7 +153,7 @@ class ScientificNameBirdSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    scientific_names = ScientificNameOrderSerializer(required=False, many=True)
+    scientific_names = ScientificNameOrderSerializer(required=False, allow_null=True, many=True)
 
     class Meta:
         model = Order
@@ -190,8 +190,8 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class FamilySerializer(serializers.ModelSerializer):
-    scientific_names = ScientificNameFamilySerializer(required=False, many=True)
-    order = PrimaryKeyRelatedField(queryset=Order.objects.all(), required=False)
+    scientific_names = ScientificNameFamilySerializer(required=False, allow_null=True, many=True)
+    order = PrimaryKeyRelatedField(queryset=Order.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = Family
@@ -232,9 +232,9 @@ class FamilySerializer(serializers.ModelSerializer):
 
 
 class TypeSerializer(serializers.ModelSerializer):
-    name = TextSerializer(required=False)
-    image = ImageSerializer(required=False)
-    text = TextSerializer(required=False)
+    name = TextSerializer(required=False, allow_null=True)
+    image = ImageSerializer(required=False, allow_null=True)
+    text = TextSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Type
@@ -301,7 +301,7 @@ class ValueSerializer(serializers.ModelSerializer):
 
 
 class ReferenceSerializer(serializers.ModelSerializer):
-    authors = AuthorSerializer(many=True, required=False)
+    authors = AuthorSerializer(many=True, required=False, allow_null=True)
 
     class Meta:
         model = Reference
@@ -352,8 +352,8 @@ class ReferenceSerializer(serializers.ModelSerializer):
 
 
 class MeasureSerializer(serializers.ModelSerializer):
-    value = ValueSerializer(required=False)
-    reference = ReferenceSerializer(required=False)
+    value = ValueSerializer(required=False, allow_null=True)
+    reference = ReferenceSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Measure
@@ -401,10 +401,10 @@ class MeasureSerializer(serializers.ModelSerializer):
 
 
 class IdentificationSerializer(serializers.ModelSerializer):
-    description = TextSerializer(required=False)
-    plumage = TypeSerializer(required=False, many=True)
-    lengths = MeasureSerializer(required=False, many=True)
-    weights = MeasureSerializer(required=False, many=True)
+    description = TextSerializer(required=False, allow_null=True)
+    plumage = TypeSerializer(required=False, allow_null=True, many=True)
+    lengths = MeasureSerializer(required=False, allow_null=True, many=True)
+    weights = MeasureSerializer(required=False, allow_null=True, many=True)
 
     class Meta:
         model = Identification
@@ -498,7 +498,7 @@ class IdentificationSerializer(serializers.ModelSerializer):
 
 
 class BirdImageSerializer(serializers.ModelSerializer):
-    author = AuthorSerializer(required=False)
+    author = AuthorSerializer(required=False, allow_null=True)
 
     class Meta:
         model = BirdImage
@@ -544,7 +544,7 @@ class VideoSerializer(serializers.ModelSerializer):
 
 
 class AudioSerializer(serializers.ModelSerializer):
-    author = AuthorSerializer(required=False)
+    author = AuthorSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Audio
@@ -581,9 +581,9 @@ class AudioSerializer(serializers.ModelSerializer):
 
 
 class VocalizationSerializer(serializers.ModelSerializer):
-    short_description = TextSerializer(required=False)
-    long_description = TextSerializer(required=False)
-    audio = AudioSerializer(required=False)
+    short_description = TextSerializer(required=False, allow_null=True)
+    long_description = TextSerializer(required=False, allow_null=True)
+    audio = AudioSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Vocalization
@@ -653,8 +653,8 @@ class SubspeciesNameSerializer(serializers.ModelSerializer):
 
 
 class DistributionSerializer(serializers.ModelSerializer):
-    text = TextSerializer(required=False)
-    location_map = ImageSerializer(required=False)
+    text = TextSerializer(required=False, allow_null=True)
+    location_map = ImageSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Distribution
@@ -700,11 +700,11 @@ class DistributionSerializer(serializers.ModelSerializer):
 
 
 class SubspeciesSerializer(serializers.ModelSerializer):
-    names = SubspeciesNameSerializer(required=False, many=True)
-    distribution = DistributionSerializer(required=False)
-    images = BirdImageSerializer(many=True, required=False)
-    lengths = MeasureSerializer(required=False, many=True)
-    weights = MeasureSerializer(required=False, many=True)
+    names = SubspeciesNameSerializer(required=False, allow_null=True, many=True)
+    distribution = DistributionSerializer(required=False, allow_null=True)
+    images = BirdImageSerializer(many=True, required=False, allow_null=True)
+    lengths = MeasureSerializer(required=False, allow_null=True, many=True)
+    weights = MeasureSerializer(required=False, allow_null=True, many=True)
 
     class Meta:
         model = Subspecies
@@ -819,27 +819,27 @@ class SubspeciesSerializer(serializers.ModelSerializer):
 
 
 class BirdSerializer(serializers.ModelSerializer):
-    family = PrimaryKeyRelatedField(queryset=Family.objects.all(), required=False)
-    subspecies = SubspeciesSerializer(required=False, many=True)
-    common_names = CommonNameBirdSerializer(required=False, many=True)
-    scientific_names = ScientificNameBirdSerializer(required=False, many=True)
-    images = BirdImageSerializer(many=True, required=False)
-    videos = VideoSerializer(many=True, required=False)
-    vocalizations = VocalizationSerializer(many=True, required=False)
-    description = TextSerializer(required=False)
-    identification = IdentificationSerializer(required=False)
-    distribution = DistributionSerializer(required=False)
-    migration = TypeSerializer(required=False)
-    habitat = TextSerializer(required=False)
-    feeding = TypeSerializer(many=True, required=False)
-    reproduction = TypeSerializer(required=False, many=True)
-    behavior = TypeSerializer(many=True, required=False)
-    taxonomy = TextSerializer(required=False)
-    conservation = TypeSerializer(required=False)
-    similar_species = SimilarSpeciesSerializer(required=False)
-    references = ReferenceSerializer(required=False, many=True)
-    own_citation = ReferenceSerializer(required=False)
-    authors = PrimaryKeyRelatedField(many=True, queryset=Author.objects.all(), required=False)
+    family = PrimaryKeyRelatedField(queryset=Family.objects.all(), required=False, allow_null=True)
+    subspecies = SubspeciesSerializer(required=False, allow_null=True, many=True)
+    common_names = CommonNameBirdSerializer(required=False, allow_null=True, many=True)
+    scientific_names = ScientificNameBirdSerializer(required=False, allow_null=True, many=True)
+    images = BirdImageSerializer(many=True, required=False, allow_null=True)
+    videos = VideoSerializer(many=True, required=False, allow_null=True)
+    vocalizations = VocalizationSerializer(many=True, required=False, allow_null=True)
+    description = TextSerializer(required=False, allow_null=True)
+    identification = IdentificationSerializer(required=False, allow_null=True)
+    distribution = DistributionSerializer(required=False, allow_null=True)
+    migration = TypeSerializer(required=False, allow_null=True)
+    habitat = TextSerializer(required=False, allow_null=True)
+    feeding = TypeSerializer(many=True, required=False, allow_null=True)
+    reproduction = TypeSerializer(required=False, allow_null=True, many=True)
+    behavior = TypeSerializer(many=True, required=False, allow_null=True)
+    taxonomy = TextSerializer(required=False, allow_null=True)
+    conservation = TypeSerializer(required=False, allow_null=True)
+    similar_species = SimilarSpeciesSerializer(required=False, allow_null=True)
+    references = ReferenceSerializer(required=False, allow_null=True, many=True)
+    own_citation = ReferenceSerializer(required=False, allow_null=True)
+    authors = PrimaryKeyRelatedField(many=True, queryset=Author.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = Bird
