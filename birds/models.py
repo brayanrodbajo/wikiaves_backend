@@ -53,7 +53,7 @@ class Author(models.Model):
     reference = models.ForeignKey(Reference, related_name='authors', null=True, on_delete=models.SET_NULL)
     image = models.ForeignKey('Image', related_name='author_image', null=True, on_delete=models.SET_NULL)
     url = models.URLField(null=True, blank=True)
-    description = models.TextField(null=True, blank=True)
+    description = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='author_description')
 
 
 class Order(models.Model):
@@ -138,7 +138,8 @@ class Bird(models.Model):
     migration = models.ForeignKey(Type, related_name='bird_migration', null=True, on_delete=models.SET_NULL)
     own_citation = models.ForeignKey(Reference, related_name='bird', null=True, on_delete=models.SET_NULL)
     similar_species = models.ForeignKey('SimilarSpecies', related_name='bird', null=True, on_delete=models.SET_NULL)
-    similar_species_class_id = models.ForeignKey('SimilarSpecies', related_name='bird_ids', null=True, on_delete=models.SET_NULL)
+    similar_species_class_id = models.ForeignKey('SimilarSpecies', related_name='bird_ids', null=True,
+                                                 on_delete=models.SET_NULL)
     authors = models.ManyToManyField(Author, through='AuthorBird', related_name='bird_authors')
     draft = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

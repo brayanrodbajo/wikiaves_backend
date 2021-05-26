@@ -24,6 +24,7 @@ class ImageSerializer(serializers.ModelSerializer):
 
 class AuthorSerializer(serializers.ModelSerializer):
     image = ImageSerializer(required=False, allow_null=True)
+    description = TextSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Author
@@ -37,7 +38,14 @@ class AuthorSerializer(serializers.ModelSerializer):
                 image = serializer.save()
             else:
                 print(serializer.errors)
-        author = Author.objects.create(image=image, **validated_data)
+        description = validated_data.pop('description', None)
+        if description:
+            serializer = TextSerializer(data=description)
+            if serializer.is_valid():
+                description = serializer.save()
+            else:
+                print(serializer.errors)
+        author = Author.objects.create(image=image, description=description, **validated_data)
         return author
 
     def update(self, instance, validated_data):
@@ -52,10 +60,29 @@ class AuthorSerializer(serializers.ModelSerializer):
                     print(serializer.errors)
             else:
                 instance.image = None
-        instance.first_name = validated_data.get('first_name', None)
-        instance.last_name = validated_data.get('last_name', None)
-        instance.url = validated_data.get('url', None)
-        instance.description = validated_data.get('description', None)
+        description = validated_data.get('description', "")
+        if description != "":
+            if description:
+                serializer = ImageSerializer(instance.description, data=description)
+                if serializer.is_valid():
+                    description = serializer.save()
+                    instance.description = description
+                else:
+                    print(serializer.errors)
+            else:
+                instance.description = None
+        first_name = validated_data.get('first_name', "")
+        if first_name != "":
+            instance.first_name = first_name
+        last_name = validated_data.get('last_name', "")
+        if last_name != "":
+            instance.last_name = last_name
+        url = validated_data.get('url', "")
+        if url != "":
+            instance.url = url
+        description = validated_data.get('description', "")
+        if description != "":
+            instance.description = description
         instance.save()
         return instance
 
