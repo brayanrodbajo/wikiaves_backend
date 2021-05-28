@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from birds.models import Text, Reference, Author, Order, Family, Identification, \
     Bird, Image, Video, Audio, Value, Type, Subspecies, SubspeciesName, BirdImage, Measure, CommonNameBird, \
-    Vocalization, Distribution
+    Vocalization, Distribution, Feeding
 
 
 @admin.register(Text)
@@ -42,8 +42,13 @@ class IdentificationAdmin(admin.ModelAdmin):
 
 
 @admin.register(Type)
-class HabitatAdmin(admin.ModelAdmin):
-    list_display = ('name', 'image', 'text')
+class TypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'text')
+
+
+@admin.register(Feeding)
+class FeedingAdmin(admin.ModelAdmin):
+    list_display = ('id','text')
 
 
 @admin.register(Distribution)
