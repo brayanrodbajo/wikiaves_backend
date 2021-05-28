@@ -79,7 +79,6 @@ class Identification(models.Model):
 class Type(models.Model):
     name = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='type_name')
     text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='type_text')
-    identification = models.ForeignKey(Identification, null=True, on_delete=models.SET_NULL, related_name='plumage')
     reproduction = models.ForeignKey('Bird', null=True, on_delete=models.SET_NULL, related_name='reproduction')
     bird_behavior = models.ForeignKey('Bird', null=True, on_delete=models.SET_NULL, related_name='behavior')
 
@@ -250,7 +249,7 @@ class Measure(models.Model):
     value = models.ForeignKey(Value, null=True, related_name='measure', on_delete=models.SET_NULL)
     name = models.CharField(max_length=100) # in spanish
     unit = models.CharField(max_length=2, choices=UNIT_CHOICES)
-    reference = models.ForeignKey(Reference, related_name='measures', null=True, on_delete=models.SET_NULL)
+    reference = models.TextField(null=True, blank=True)
     identification_lengths = models.ForeignKey(Identification, related_name='lengths', null=True,
                                                on_delete=models.SET_NULL)
     identification_weights = models.ForeignKey(Identification, related_name='weights', null=True,

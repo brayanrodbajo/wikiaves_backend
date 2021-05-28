@@ -269,7 +269,7 @@ class TypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Type
-        exclude = ('id', 'identification', 'bird_feeding', 'reproduction', 'bird_behavior')
+        fields = ('name', 'text')
 
     def create(self, validated_data):
         name = validated_data.pop('name', None)
@@ -404,7 +404,6 @@ class ReferenceSerializer(serializers.ModelSerializer):
 
 class MeasureSerializer(serializers.ModelSerializer):
     value = ValueSerializer(required=False)
-    reference = ReferenceSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Measure
@@ -418,14 +417,7 @@ class MeasureSerializer(serializers.ModelSerializer):
                 value = serializer.save()
             else:
                 print(serializer.errors)
-        reference = validated_data.pop('reference', None)
-        if reference:
-            serializer = ReferenceSerializer(data=reference)
-            if serializer.is_valid():
-                reference = serializer.save()
-            else:
-                print(serializer.errors)
-        measure = Measure.objects.create(value=value, reference=reference, **validated_data)
+        measure = Measure.objects.create(value=value, **validated_data)
         return measure
 
     def update(self, instance, validated_data):
@@ -437,18 +429,8 @@ class MeasureSerializer(serializers.ModelSerializer):
                 instance.value = value
             else:
                 print(serializer.errors)
-        reference = validated_data.get('reference', "")
-        if reference != "":
-            if reference:
-                serializer = ReferenceSerializer(instance.reference, data=reference)
-                if serializer.is_valid():
-                    reference = serializer.save()
-                    instance.reference = reference
-                else:
-                    print(serializer.errors)
-            else:
-                instance.reference = None
         instance.name = validated_data.get('name', None)
+        instance.reference = validated_data.get('reference', None)
         instance.unit = validated_data.get('unit', None)
         instance.save()
         return instance
@@ -456,7 +438,6 @@ class MeasureSerializer(serializers.ModelSerializer):
 
 class IdentificationSerializer(serializers.ModelSerializer):
     description = TextSerializer(required=False, allow_null=True)
-    plumage = TypeSerializer(required=False, allow_null=True, many=True)
     lengths = MeasureSerializer(required=False, allow_null=True, many=True)
     weights = MeasureSerializer(required=False, allow_null=True, many=True)
 
@@ -466,7 +447,6 @@ class IdentificationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         description = validated_data.pop('description', None)
-        plumage_data = validated_data.pop('plumage', [])
         lengths_data = validated_data.pop('lengths', [])
         weights_data = validated_data.pop('weights', [])
         if description:
@@ -476,15 +456,6 @@ class IdentificationSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         identification = Identification.objects.create(description=description, **validated_data)
-        plumage = []
-        for plum in plumage_data:
-            serializer = TypeSerializer(data=plum)
-            if serializer.is_valid():
-                obj = serializer.save()
-                plumage.append(obj)
-            else:
-                print(serializer.errors)
-        identification.plumage.set(plumage)
         lengths = []
         for len in lengths_data:
             serializer = MeasureSerializer(data=len)
@@ -506,18 +477,6 @@ class IdentificationSerializer(serializers.ModelSerializer):
         return identification
 
     def update(self, instance, validated_data):
-        plumage_data = validated_data.pop('plumage', None)
-        if plumage_data:
-            plumage = []
-            instance.plumage.all().delete()
-            for plum in plumage_data:
-                serializer = TypeSerializer(data=plum)
-                if serializer.is_valid():
-                    obj = serializer.save()
-                    plumage.append(obj)
-                else:
-                    print(serializer.errors)
-            instance.plumage.set(plumage)
         lengths_data = validated_data.pop('lengths', None)
         if lengths_data:
             lengths = []
