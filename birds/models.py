@@ -230,6 +230,7 @@ class Vocalization(models.Model):
     short_description = models.ForeignKey(Text, related_name='vocalization_short', null=True, on_delete=models.SET_NULL)
     long_description = models.ForeignKey(Text, related_name='vocalization_long', null=True, on_delete=models.SET_NULL)
     audio = models.ForeignKey(Audio, related_name='vocalization', null=True, on_delete=models.SET_NULL)
+    xenocantoID = models.CharField(max_length=40, null=True)
     bird = models.ForeignKey(Bird, related_name='vocalizations', null=True, on_delete=models.SET_NULL)
 
 

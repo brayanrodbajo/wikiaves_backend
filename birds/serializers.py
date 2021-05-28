@@ -689,6 +689,9 @@ class VocalizationSerializer(serializers.ModelSerializer):
         category = validated_data.get('category', "")
         if category != "":
             instance.category = category
+        xenocantoID = validated_data.get('xenocantoID', "")
+        if xenocantoID != "":
+            instance.xenocantoID = xenocantoID
         instance.save()
         return instance
 
