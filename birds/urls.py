@@ -14,6 +14,7 @@ urlpatterns = [
     path('orders/<int:pk>', views.SingleOrder.as_view()),
     path('families', views.Families.as_view()),
     path('families/<int:pk>', views.SingleFamily.as_view()),
+    path('get_names', views.get_names),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)
