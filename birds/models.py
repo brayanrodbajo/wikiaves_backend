@@ -12,6 +12,7 @@ class Text(models.Model):
     )
     language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES)
     text = models.TextField()
+    feeding_name = models.ForeignKey('Feeding', null=True, on_delete=models.SET_NULL, related_name='names')
 
 
 class Reference(models.Model):
@@ -77,10 +78,8 @@ class Identification(models.Model):
 
 class Type(models.Model):
     name = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='type_name')
-    image = models.ForeignKey('Image', related_name='type_image', null=True, on_delete=models.SET_NULL)
     text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='type_text')
     identification = models.ForeignKey(Identification, null=True, on_delete=models.SET_NULL, related_name='plumage')
-    bird_feeding = models.ForeignKey('Bird', null=True, on_delete=models.SET_NULL, related_name='feeding')
     reproduction = models.ForeignKey('Bird', null=True, on_delete=models.SET_NULL, related_name='reproduction')
     bird_behavior = models.ForeignKey('Bird', null=True, on_delete=models.SET_NULL, related_name='behavior')
 
@@ -96,6 +95,10 @@ class Image(models.Model):
 class Distribution(models.Model):
     text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='distribution')
     location_map = models.ForeignKey(Image, null=True, on_delete=models.SET_NULL, related_name='distribution')
+
+
+class Feeding(models.Model):
+    text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='feeding')
 
 #
 # class SDYouth(models.Model):
@@ -140,6 +143,7 @@ class Bird(models.Model):
     similar_species = models.ForeignKey('SimilarSpecies', related_name='bird', null=True, on_delete=models.SET_NULL)
     similar_species_class_id = models.ForeignKey('SimilarSpecies', related_name='bird_ids', null=True,
                                                  on_delete=models.SET_NULL)
+    feeding = models.ForeignKey(Feeding, null=True, on_delete=models.SET_NULL, related_name='birds_feed')
     authors = models.ManyToManyField(Author, through='AuthorBird', related_name='bird_authors')
     draft = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
