@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from rest_condition import Or
 from rest_framework import generics, viewsets, views, status, filters
+from rest_framework.decorators import api_view
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView, CreateAPIView
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
 from rest_framework.pagination import LimitOffsetPagination
@@ -70,3 +71,29 @@ class SingleFamily(RetrieveUpdateDestroyAPIView):
     serializer_class = FamilySerializer
     permission_classes = (AdminCustomPermission, )
 
+
+@api_view(['GET'])
+def get_names(request):
+    model = request.query_params.get('model', None)
+    if model:
+        if model == 'feeding':
+            names = list(Bird.objects.order_by().values_list('feeding__names__text', flat=True).distinct())
+        else:
+            try:
+                names = list(Bird.objects.order_by().values_list(model+'__name__text', flat=True).distinct())
+            except Exception as e:
+                resp = {
+                    "message": str(e)
+                }
+                return Response(resp, status=status.HTTP_400_BAD_REQUEST)
+        if None in names:
+            names.remove(None)
+        resp = {
+            "results": names
+        }
+        return Response(resp, status=status.HTTP_200_OK)
+    else:
+        resp = {
+            "message": "model query param required"
+        }
+        return Response(resp, status=status.HTTP_400_BAD_REQUEST)
