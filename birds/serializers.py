@@ -511,7 +511,7 @@ class IdentificationSerializer(serializers.ModelSerializer):
             plumage = []
             instance.plumage.all().delete()
             for plum in plumage_data:
-                serializer = AuthorSerializer(data=plum)
+                serializer = TypeSerializer(data=plum)
                 if serializer.is_valid():
                     obj = serializer.save()
                     plumage.append(obj)
