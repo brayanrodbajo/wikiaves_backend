@@ -22,13 +22,23 @@ class ImageSerializer(serializers.ModelSerializer):
         }
 
 
+class AuthorImageSerializer(serializers.ModelSerializer):
+    image = ImageSerializer(required=False, allow_null=True)
+    description = TextSerializer(required=False, allow_null=True)
+    images_authored = ImageSerializer(read_only=True, many=True, required=False)
+
+    class Meta:
+        model = Author
+        exclude = ('reference',)
+
+
 class AuthorSerializer(serializers.ModelSerializer):
     image = ImageSerializer(required=False, allow_null=True)
     description = TextSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Author
-        exclude = ('id', 'reference')
+        exclude = ('reference',)
 
     def create(self, validated_data):
         image = validated_data.pop('image', None)
@@ -63,7 +73,7 @@ class AuthorSerializer(serializers.ModelSerializer):
         description = validated_data.get('description', "")
         if description != "":
             if description:
-                serializer = ImageSerializer(instance.description, data=description)
+                serializer = TextSerializer(instance.description, data=description)
                 if serializer.is_valid():
                     description = serializer.save()
                     instance.description = description
@@ -77,12 +87,21 @@ class AuthorSerializer(serializers.ModelSerializer):
         last_name = validated_data.get('last_name', "")
         if last_name != "":
             instance.last_name = last_name
-        url = validated_data.get('url', "")
-        if url != "":
-            instance.url = url
-        description = validated_data.get('description', "")
-        if description != "":
-            instance.description = description
+        webpage = validated_data.get('webpage', "")
+        if webpage != "":
+            instance.webpage = webpage
+        twitter = validated_data.get('twitter', "")
+        if twitter != "":
+            instance.twitter = twitter
+        instagram = validated_data.get('instagram', "")
+        if instagram != "":
+            instance.instagram = instagram
+        facebook = validated_data.get('facebook', "")
+        if facebook != "":
+            instance.facebook = facebook
+        flicker = validated_data.get('flicker', "")
+        if flicker != "":
+            instance.flicker = flicker
         instance.save()
         return instance
 
@@ -261,6 +280,15 @@ class FamilySerializer(serializers.ModelSerializer):
             instance.scientific_names.set(scientific_names)
         instance.save()
         return instance
+
+
+class FamilyReadSerializer(serializers.ModelSerializer):
+    scientific_names = ScientificNameFamilySerializer(required=False, many=True)
+    order = OrderSerializer(required=False)
+
+    class Meta:
+        model = Family
+        fields = '__all__'
 
 
 class TypeSerializer(serializers.ModelSerializer):
@@ -517,7 +545,7 @@ class IdentificationSerializer(serializers.ModelSerializer):
 
 
 class BirdImageSerializer(serializers.ModelSerializer):
-    author = AuthorSerializer(required=False, allow_null=True)
+    author = PrimaryKeyRelatedField(queryset=Author.objects.all(), required=False)
 
     class Meta:
         model = BirdImage
@@ -560,6 +588,17 @@ class BirdImageSerializer(serializers.ModelSerializer):
             instance.main = main
         instance.save()
         return instance
+
+
+class BirdImageReadSerializer(serializers.ModelSerializer):
+    author = AuthorSerializer(required=False, allow_null=True)
+
+    class Meta:
+        model = BirdImage
+        exclude = ('id', 'bird')
+        extra_kwargs = {
+            'url': {'validators': []},
+        }
 
 
 class VideoSerializer(serializers.ModelSerializer):
@@ -1368,3 +1407,55 @@ class BirdSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+
+class BirdReadSerializer(serializers.ModelSerializer):
+    family = FamilyReadSerializer(required=False)
+    subspecies = SubspeciesSerializer(required=False, allow_null=True, many=True)
+    common_names = CommonNameBirdSerializer(required=False, allow_null=True, many=True)
+    scientific_names = ScientificNameBirdSerializer(required=False, many=True)
+    images = BirdImageReadSerializer(many=True, required=False, allow_null=True)
+    videos = VideoSerializer(many=True, required=False, allow_null=True)
+    vocalizations = VocalizationSerializer(many=True, required=False, allow_null=True)
+    description = TextSerializer(required=False, allow_null=True)
+    identification = IdentificationSerializer(required=False, allow_null=True)
+    distribution = DistributionSerializer(required=False, allow_null=True)
+    migration = TypeSerializer(required=False, allow_null=True)
+    habitat = TextSerializer(required=False, allow_null=True)
+    feeding = FeedingSerializer(required=False, allow_null=True)
+    reproduction = TypeSerializer(required=False, allow_null=True, many=True)
+    behavior = TypeSerializer(many=True, required=False, allow_null=True)
+    taxonomy = TextSerializer(required=False, allow_null=True)
+    conservation = TypeSerializer(required=False, allow_null=True)
+    similar_species = SimilarSpeciesSerializer(required=False, allow_null=True)
+    references = ReferenceSerializer(required=False, allow_null=True, many=True)
+    own_citation = ReferenceSerializer(required=False, allow_null=True)
+    authors = AuthorSerializer(many=True, required=False, allow_null=True)
+
+    class Meta:
+        model = Bird
+        exclude = ('similar_species_class_id', )
+
+
+class BirdIdsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bird
+        fields = ('id',)
+
+
+class FamilyIdsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Family
+        fields = ('id',)
+
+
+class OrderIdsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ('id',)
+
+
+class AuthorIdsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Author
+        fields = ('id',)

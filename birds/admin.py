@@ -18,7 +18,7 @@ class ReferenceAdmin(admin.ModelAdmin):
 
 @admin.register(Author)
 class AuthorAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'last_name', 'reference', 'image', 'url', 'description')
+    list_display = ('first_name', 'last_name', 'reference', 'image', 'webpage', 'description')
 
 
 @admin.register(Order)
