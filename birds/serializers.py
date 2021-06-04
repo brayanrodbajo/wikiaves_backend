@@ -22,16 +22,6 @@ class ImageSerializer(serializers.ModelSerializer):
         }
 
 
-class AuthorImageSerializer(serializers.ModelSerializer):
-    image = ImageSerializer(required=False, allow_null=True)
-    description = TextSerializer(required=False, allow_null=True)
-    images_authored = ImageSerializer(read_only=True, many=True, required=False)
-
-    class Meta:
-        model = Author
-        exclude = ('reference',)
-
-
 class AuthorSerializer(serializers.ModelSerializer):
     image = ImageSerializer(required=False, allow_null=True)
     description = TextSerializer(required=False, allow_null=True)
@@ -556,27 +546,13 @@ class BirdImageSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         author = validated_data.pop('author', None)
-        if author:
-            serializer = AuthorSerializer(data=author)
-            if serializer.is_valid():
-                author = serializer.save()
-            else:
-                print(serializer.errors)
         image = BirdImage.objects.create(author=author, **validated_data)
         return image
 
     def update(self, instance, validated_data):
-        author = validated_data.get('author', "")
-        if author != "":
-            if author:
-                serializer = AuthorSerializer(instance.author, data=author)
-                if serializer.is_valid():
-                    author = serializer.save()
-                    instance.author = author
-                else:
-                    print(serializer.errors)
-            else:
-                instance.author = None
+        author = validated_data.pop('author', None)
+        if author:
+            instance.author = author
         category = validated_data.get('category', "")
         if category != "":
             instance.category = category
@@ -1113,6 +1089,7 @@ class BirdSerializer(serializers.ModelSerializer):
         bird.scientific_names.set(scientific_names)
         images = []
         for image in images_data:
+            image['author'] = image['author'].id
             serializer = BirdImageSerializer(data=image)
             if serializer.is_valid():
                 im = serializer.save()
@@ -1328,6 +1305,7 @@ class BirdSerializer(serializers.ModelSerializer):
             images = []
             instance.images.all().delete()
             for image in images_data:
+                image['author'] = image['author'].id
                 serializer = BirdImageSerializer(data=image)
                 if serializer.is_valid():
                     si = serializer.save()
@@ -1435,6 +1413,27 @@ class BirdReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bird
         exclude = ('similar_species_class_id', )
+
+
+class BirdImageAuthorSerializer(serializers.ModelSerializer):
+    bird = BirdReadSerializer(required=False, allow_null=True)
+
+    class Meta:
+        model = BirdImage
+        exclude = ('id', 'author')
+        extra_kwargs = {
+            'url': {'validators': []},
+        }
+
+
+class AuthorImageSerializer(serializers.ModelSerializer):
+    image = ImageSerializer(required=False, allow_null=True)
+    description = TextSerializer(required=False, allow_null=True)
+    images_authored = BirdImageAuthorSerializer(read_only=True, many=True, required=False)
+
+    class Meta:
+        model = Author
+        exclude = ('reference',)
 
 
 class BirdIdsSerializer(serializers.ModelSerializer):

@@ -17,6 +17,7 @@ class CustomLoginView(LoginView):
     def get_response(self):
         original_response = super().get_response()
         mydata = {"role": self.user.role, "first_name": self.user.first_name, "last_name": self.user.last_name}
+        print(mydata)
         original_response.data.update(mydata)
         return original_response
 

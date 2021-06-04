@@ -125,7 +125,7 @@ class Authors(ListCreateAPIView):
     filter_backends = (filters.SearchFilter,)
 
     def get_queryset(self):
-        queryset = Author.objects.all()
+        queryset = Author.objects.filter(images_authored__isnull=False).distinct()
         id_only = self.request.query_params.get('id_only', None)
         if id_only:
             self.serializer_class = AuthorIdsSerializer

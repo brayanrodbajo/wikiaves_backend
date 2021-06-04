@@ -103,36 +103,8 @@ class Distribution(models.Model):
 class Feeding(models.Model):
     text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='feeding')
 
-#
-# class SDYouth(models.Model):
-#     image = models.ForeignKey('BirdImage', related_name='sdyouth', null=True, on_delete=models.SET_NULL)
-#     text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='sdyouth')
-#
-#
-# class SDSubadult(models.Model):
-#     image = models.ForeignKey('BirdImage', related_name='sdsubadult', null=True, on_delete=models.SET_NULL)
-#     text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='sdsubadult')
-#
-#
-# class SDFemale(models.Model):
-#     image = models.ForeignKey('BirdImage', related_name='sdfemale', null=True, on_delete=models.SET_NULL)
-#     text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='sdfemale')
-#
-#
-# class SDMale(models.Model):
-#     image = models.ForeignKey('BirdImage', related_name='sdmale', null=True, on_delete=models.SET_NULL)
-#     text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='sdmale')
-#
-#
-# class SexualDifferentiation(models.Model):
-#     youth = models.ForeignKey(SDYouth, null=True, on_delete=models.SET_NULL, related_name='sexual_diff')
-#     subadult = models.ForeignKey(SDSubadult, null=True, on_delete=models.SET_NULL, related_name='sexual_diff')
-#     female = models.ForeignKey(SDFemale, null=True, on_delete=models.SET_NULL, related_name='sexual_diff')
-#     male = models.ForeignKey(SDMale, null=True, on_delete=models.SET_NULL, related_name='sexual_diff')
-
 
 class Bird(models.Model):
-    # common_names = models.ManyToManyField(Text, through='CommonNameBird', related_name='birds_cn')
     family = models.ForeignKey(Family, related_name='bird', null=True, on_delete=models.SET_NULL)
     description = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='birds_desc')
     identification = models.ForeignKey(Identification, related_name='bird', null=True, on_delete=models.SET_NULL)
