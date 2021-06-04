@@ -54,6 +54,7 @@ class Orders(ListCreateAPIView):
         id_only = self.request.query_params.get('id_only', None)
         if id_only:
             self.serializer_class = OrderIdsSerializer
+        return self.queryset
 
 
 class SingleOrder(RetrieveUpdateDestroyAPIView):
