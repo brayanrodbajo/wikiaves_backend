@@ -38,7 +38,8 @@ class Birds(ListCreateAPIView):
 
 class SingleBird(RetrieveUpdateDestroyAPIView):
     queryset = Bird.objects.all()
-    serializer_class = BirdSerializer
+    write_serializer_class = BirdSerializer
+    read_serializer_class = BirdReadSerializer
     permission_classes = (Or(AdminCustomPermission, EditorCustomPermission), )
 
 
@@ -85,7 +86,8 @@ class Families(ListCreateAPIView):
 
 class SingleFamily(RetrieveUpdateDestroyAPIView):
     queryset = Family.objects.all()
-    serializer_class = FamilySerializer
+    write_serializer_class = FamilySerializer
+    read_serializer_class = FamilyReadSerializer
     permission_classes = (AdminCustomPermission, )
 
 
