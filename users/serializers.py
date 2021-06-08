@@ -36,18 +36,41 @@ class UserProfileSerializer(serializers.ModelSerializer):
     password = serializers.CharField(required=False)
     username = serializers.CharField(required=False)
     email = serializers.CharField(required=False)
+    webpage = serializers.URLField(required=False)
+    twitter = serializers.URLField(required=False)
+    instagram = serializers.URLField(required=False)
+    facebook = serializers.URLField(required=False)
+    flicker = serializers.URLField(required=False)
+    id = serializers.IntegerField()
 
     class Meta:
         model = CustomUser
         exclude = ('reference', )
 
     def update(self, instance, validated_data):
-        instance.first_name = validated_data.get('first_name', None)
-        instance.last_name = validated_data.get('last_name', None)
-        instance.webpage = validated_data.get('webpage', None)
-        instance.twitter = validated_data.get('twitter', None)
-        instance.instagram = validated_data.get('instagram', None)
-        instance.facebook = validated_data.get('facebook', None)
-        instance.flicker = validated_data.get('flicker', None)
-        instance.role = validated_data.get('role', None)
+        first_name = validated_data.get('first_name', "")
+        if first_name != "":
+            instance.first_name = first_name
+        last_name = validated_data.get('last_name', "")
+        if last_name != "":
+            instance.last_name = last_name
+        webpage = validated_data.get('webpage', "")
+        if webpage != "":
+            instance.webpage = webpage
+        twitter = validated_data.get('twitter', "")
+        if twitter != "":
+            instance.twitter = twitter
+        instagram = validated_data.get('instagram', "")
+        if instagram != "":
+            instance.instagram = instagram
+        facebook = validated_data.get('facebook', "")
+        if facebook != "":
+            instance.facebook = facebook
+        flicker = validated_data.get('flicker', "")
+        if flicker != "":
+            instance.flicker = flicker
+        role = validated_data.get('role', "")
+        if role != "":
+            instance.role = role
+        instance.save()
         return instance
