@@ -187,3 +187,8 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 
 SITE_ID = 2
+
+try:
+    from local_settings import *
+except ImportError as e:
+    pass
