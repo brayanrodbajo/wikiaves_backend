@@ -110,18 +110,15 @@ CORS_ORIGIN_ALLOW_ALL = True
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD')
+POSTGRES_PORT = os.environ.get('POSTGRES_PORT')
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'wiki_test',
-        'USER': 'postgres',
-        'HOST': 'localhost',
-        'PASSWORD': 'brayan',
         'NAME': 'gis',
         'USER': 'gisuser',
         'HOST': 'postgis',
         'PASSWORD': POSTGRES_PASSWORD,
-        'PORT': '5432',
+        'PORT': POSTGRES_PORT,
     }
 }
 # DATABASES = {
