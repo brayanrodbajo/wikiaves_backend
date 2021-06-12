@@ -117,7 +117,7 @@ DATABASES = {
         'USER': 'gisuser',
         'HOST': 'postgis',
         'PASSWORD': POSTGRES_PASSWORD,
-        'PORT': 5432,
+        'PORT': '5432',
     }
 }
 # DATABASES = {
