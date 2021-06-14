@@ -1,4 +1,4 @@
-# wikiaves backend
+# Wikiaves backend
 Backend in Django for a public repository of birds
 
 You must set environment variables or create .env file with:
