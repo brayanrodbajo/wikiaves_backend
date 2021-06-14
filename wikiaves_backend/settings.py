@@ -113,10 +113,6 @@ POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD')
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'wiki_test',
-        'USER': 'postgres',
-        'HOST': 'localhost',
-        'PASSWORD': 'brayan',
         'NAME': 'gis',
         'USER': 'gisuser',
         'HOST': 'postgis',
