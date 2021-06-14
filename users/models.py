@@ -1,5 +1,5 @@
 from django.contrib.auth.base_user import AbstractBaseUser
-from django.contrib.auth.models import AbstractUser, PermissionsMixin
+from django.contrib.auth.models import AbstractUser, PermissionsMixin, UserManager
 from django.db import models
 
 from birds.models import Bird, Author
@@ -16,6 +16,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin, Author):
     birds = models.ManyToManyField(Bird, through='BirdEditor', related_name='editors')
 
     USERNAME_FIELD = 'username'
+    objects = UserManager()
+    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.email

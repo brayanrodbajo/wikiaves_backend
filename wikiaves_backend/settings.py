@@ -113,10 +113,6 @@ POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD')
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': 'wiki_test',
-        'USER': 'postgres',
-        'HOST': 'localhost',
-        'PASSWORD': 'brayan',
         'NAME': 'gis',
         'USER': 'gisuser',
         'HOST': 'postgis',
@@ -173,7 +169,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = '/wikiaves_dev/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 # ALLAUTH
@@ -187,3 +183,8 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 
 SITE_ID = 2
+
+try:
+    from local_settings import *
+except ImportError as e:
+    pass
