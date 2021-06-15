@@ -110,8 +110,24 @@ class BirdEditorView(APIView):
 @api_view(['GET'])
 def get_token_status(request):
     if 'Authorization' in request.headers:
-        key = request.headers['Authorization'].split(' ')[1]
-        token = TokenModel.objects.get(key=key)
-        active = not is_token_expired(token)
-        resp = {'active': active}
-        return Response(resp, status=status.HTTP_200_OK)
+        try:
+            key = request.headers['Authorization'].split(' ')[1]
+            token = TokenModel.objects.get(key=key)
+            active = not is_token_expired(token)
+            resp = {'active': active}
+            return Response(resp, status=status.HTTP_200_OK)
+        except IndexError as e:
+            resp = {
+                "message": "Authorization header should contain the word 'Token' followed by the key"
+            }
+            return Response(resp, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            resp = {
+                "message": str(e)
+            }
+            return Response(resp, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    else:
+        resp = {
+            "message": "Authorization header required"
+        }
+        return Response(resp, status=status.HTTP_400_BAD_REQUEST)
