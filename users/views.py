@@ -1,6 +1,10 @@
+import pytz
+from datetime import datetime
+
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import generics, viewsets, views, status
+from rest_framework.decorators import api_view
 from rest_framework.generics import ListAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView, UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -8,12 +12,37 @@ from rest_framework.views import APIView
 from birds.models import Bird
 from users.models import CustomUser, BirdEditor
 from users.permissions import AdminCustomPermission
-from users.serializers import CustomRegisterSerializer, UserProfileSerializer
+from users.serializers import UserProfileSerializer
 
 from rest_auth.views import LoginView
+from rest_auth.utils import jwt_encode
+from rest_auth.models import TokenModel
+from django.conf import settings
+
+from .authentication import is_token_expired
+
+
+def custom_create_token(token_model, user, serializer):
+    token, created = token_model.objects.get_or_create(user=user)
+    if not created:
+        token.created = datetime.utcnow().replace(tzinfo=pytz.utc)
+        token.save()
+    return token
 
 
 class CustomLoginView(LoginView):
+    def login(self):
+        self.user = self.serializer.validated_data['user']
+
+        if getattr(settings, 'REST_USE_JWT', False):
+            self.token = jwt_encode(self.user)
+        else:
+            self.token = custom_create_token(self.token_model, self.user,
+                                      self.serializer)
+
+        if getattr(settings, 'REST_SESSION_LOGIN', True):
+            self.process_login()
+
     def get_response(self):
         original_response = super().get_response()
         mydata = {"id": self.user.id, "role": self.user.role, "first_name": self.user.first_name,
@@ -76,3 +105,13 @@ class BirdEditorView(APIView):
                 'success': True
             }
         return Response(response, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_token_status(request):
+    if 'Authorization' in request.headers:
+        key = request.headers['Authorization'].split(' ')[1]
+        token = TokenModel.objects.get(key=key)
+        active = not is_token_expired(token)
+        resp = {'active': active}
+        return Response(resp, status=status.HTTP_200_OK)

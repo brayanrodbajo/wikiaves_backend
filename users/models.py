@@ -1,6 +1,10 @@
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import AbstractUser, PermissionsMixin, UserManager
 from django.db import models
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.exceptions import AuthenticationFailed
+
+from .authentication import is_token_expired
 
 from birds.models import Bird, Author
 
@@ -27,3 +31,21 @@ class CustomUser(AbstractBaseUser, PermissionsMixin, Author):
 class BirdEditor(models.Model):
     bird = models.ForeignKey(Bird, related_name='bird_editor', null=True, on_delete=models.SET_NULL)
     editor = models.ForeignKey(CustomUser, related_name='editor_bird', null=True, on_delete=models.SET_NULL)
+
+
+class ExpiringTokenAuthentication(TokenAuthentication):
+    def authenticate_credentials(self, key):
+        model = self.get_model()
+        try:
+            token = model.objects.select_related('user').get(key=key)
+        except model.DoesNotExist:
+            raise AuthenticationFailed('Invalid token.')
+
+        if not token.user.is_active:
+            raise AuthenticationFailed('User inactive or deleted.')
+
+        # Token Expiration
+        if is_token_expired(token):
+            raise AuthenticationFailed('Token has expired')
+
+        return token.user, token

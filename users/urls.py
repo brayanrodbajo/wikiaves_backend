@@ -14,6 +14,7 @@ urlpatterns = [
     url('assign-bird', views.BirdEditorView.as_view()),
     path('', views.Users.as_view()),
     path('<int:pk>', views.SingleUser.as_view()),
+    path('get_token_status', views.get_token_status),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)
