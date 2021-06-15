@@ -113,9 +113,16 @@ def get_token_status(request):
         try:
             key = request.headers['Authorization'].split(' ')[1]
             token = TokenModel.objects.get(key=key)
-            active = not is_token_expired(token)
-            resp = {'active': active}
-            return Response(resp, status=status.HTTP_200_OK)
+            if not is_token_expired(token):
+                user = token.user
+                resp = {"id": user.id, "role": user.role, "first_name": user.first_name,
+                             "last_name": user.last_name, "username": user.username, "email": user.email,
+                             "webpage": user.webpage, "twitter": user.twitter, "instagram": user.instagram,
+                             "facebook": user.facebook, "flicker": user.flicker}
+                return Response(resp, status=status.HTTP_200_OK)
+            else:
+                resp = {'detail': 'Token has expired'}
+                return Response(resp, status=status.HTTP_401_UNAUTHORIZED)
         except IndexError as e:
             resp = {
                 "message": "Authorization header should contain the word 'Token' followed by the key"
