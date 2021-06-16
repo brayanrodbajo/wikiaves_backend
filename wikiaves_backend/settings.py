@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 SECRET_KEY = '_yec^d(3ed7!cqt2p$bc8)rqf6m@6+wrm8cqy81oe6^j2cosbw'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 TOKEN_EXPIRED_AFTER_DAYS = 3
 
