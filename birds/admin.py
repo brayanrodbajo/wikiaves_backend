@@ -90,7 +90,7 @@ class BirdImageAdmin(admin.ModelAdmin):
 
 @admin.register(Video)
 class VideoAdmin(admin.ModelAdmin):
-    list_display = ('url', 'thumbnail', 'category', 'format', 'location', 'seconds', 'bird')
+    list_display = ('url', 'thumbnail', 'category', 'format', 'location', 'duration_in_seconds', 'bird')
 
 
 @admin.register(Audio)

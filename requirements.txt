@@ -9,3 +9,5 @@ dj-config-url~=0.1.1
 rest_condition~=1.0.3
 drf-rw-serializers~=1.0.4
 pytz~=2020.1
+pillow~=8.2.0
+django-cleanup~=5.2.0

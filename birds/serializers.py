@@ -16,13 +16,13 @@ class TextSerializer(serializers.ModelSerializer):
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
-        exclude = ('id',)
+        fields = '__all__'
         extra_kwargs = {
             'url': {'validators': []},
         }
 
 
-class AuthorSerializer(serializers.ModelSerializer):
+class AuthorReadSerializer(serializers.ModelSerializer):
     image = ImageSerializer(required=False, allow_null=True)
     description = TextSerializer(required=False, allow_null=True)
 
@@ -30,14 +30,18 @@ class AuthorSerializer(serializers.ModelSerializer):
         model = Author
         exclude = ('reference',)
 
+
+class AuthorSerializer(serializers.ModelSerializer):
+    image = PrimaryKeyRelatedField(queryset=Image.objects.all(), required=False, allow_null=True)
+    description = TextSerializer(required=False, allow_null=True)
+    first_name = serializers.CharField(required=False)
+
+    class Meta:
+        model = Author
+        exclude = ('reference',)
+
     def create(self, validated_data):
         image = validated_data.pop('image', None)
-        if image:
-            serializer = ImageSerializer(data=image)
-            if serializer.is_valid():
-                image = serializer.save()
-            else:
-                print(serializer.errors)
         description = validated_data.pop('description', None)
         if description:
             serializer = TextSerializer(data=description)
@@ -51,15 +55,7 @@ class AuthorSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         image = validated_data.get('image', "")
         if image != "":
-            if image:
-                serializer = ImageSerializer(instance.image, data=image)
-                if serializer.is_valid():
-                    image = serializer.save()
-                    instance.image = image
-                else:
-                    print(serializer.errors)
-            else:
-                instance.image = None
+            instance.image = image
         description = validated_data.get('description', "")
         if description != "":
             if description:
@@ -213,8 +209,8 @@ class OrderSerializer(serializers.ModelSerializer):
         return order
 
     def update(self, instance, validated_data):
-        scientific_names_data = validated_data.get('scientific_names', None)
-        if scientific_names_data:
+        scientific_names_data = validated_data.get('scientific_names', '')
+        if scientific_names_data != '':
             scientific_names = []
             instance.scientific_names.all().delete()
             for scientific_name in scientific_names_data:
@@ -256,8 +252,8 @@ class FamilySerializer(serializers.ModelSerializer):
         order = validated_data.get('order', None)
         if order:
             instance.order = order
-        scientific_names_data = validated_data.get('scientific_names', None)
-        if scientific_names_data:
+        scientific_names_data = validated_data.get('scientific_names', '')
+        if scientific_names_data != '':
             scientific_names = []
             instance.scientific_names.all().delete()
             for scientific_name in scientific_names_data:
@@ -362,8 +358,8 @@ class ReferenceSerializer(serializers.ModelSerializer):
         return reference
 
     def update(self, instance, validated_data):
-        authors_data = validated_data.pop('authors', None)
-        if authors_data:
+        authors_data = validated_data.pop('authors', '')
+        if authors_data != '':
             authors = []
             instance.authors.all().delete()
             for author in authors_data:
@@ -495,8 +491,8 @@ class IdentificationSerializer(serializers.ModelSerializer):
         return identification
 
     def update(self, instance, validated_data):
-        lengths_data = validated_data.pop('lengths', None)
-        if lengths_data:
+        lengths_data = validated_data.pop('lengths', '')
+        if lengths_data != '':
             lengths = []
             instance.lengths.all().delete()
             for len in lengths_data:
@@ -507,8 +503,8 @@ class IdentificationSerializer(serializers.ModelSerializer):
                 else:
                     print(serializer.errors)
             instance.lengths.set(lengths)
-        weights_data = validated_data.pop('weights', None)
-        if weights_data:
+        weights_data = validated_data.pop('weights', '')
+        if weights_data != '':
             weights = []
             instance.weights.all().delete()
             for wei in weights_data:
@@ -536,10 +532,11 @@ class IdentificationSerializer(serializers.ModelSerializer):
 
 class BirdImageSerializer(serializers.ModelSerializer):
     author = PrimaryKeyRelatedField(queryset=Author.objects.all(), required=False)
+    url = serializers.ImageField(required=False)
 
     class Meta:
         model = BirdImage
-        exclude = ('id', 'bird')
+        exclude = ('bird', 'subspecies')
         extra_kwargs = {
             'url': {'validators': []},
         }
@@ -550,8 +547,8 @@ class BirdImageSerializer(serializers.ModelSerializer):
         return image
 
     def update(self, instance, validated_data):
-        author = validated_data.pop('author', None)
-        if author:
+        author = validated_data.pop('author', '')
+        if author != '':
             instance.author = author
         category = validated_data.get('category', "")
         if category != "":
@@ -567,17 +564,31 @@ class BirdImageSerializer(serializers.ModelSerializer):
 
 
 class BirdImageReadSerializer(serializers.ModelSerializer):
-    author = AuthorSerializer(required=False, allow_null=True)
+    author = AuthorReadSerializer(required=False, allow_null=True)
 
     class Meta:
         model = BirdImage
-        exclude = ('id', 'bird')
+        exclude = ('bird', 'subspecies')
+        extra_kwargs = {
+            'url': {'validators': []},
+        }
+
+
+class VideoReadSerializer(serializers.ModelSerializer):
+    author = AuthorReadSerializer(required=False)
+
+    class Meta:
+        model = Video
+        exclude = ('bird', )
         extra_kwargs = {
             'url': {'validators': []},
         }
 
 
 class VideoSerializer(serializers.ModelSerializer):
+    author = PrimaryKeyRelatedField(queryset=Author.objects.all(), required=False)
+    url = serializers.FileField(required=False)
+
     class Meta:
         model = Video
         exclude = ('id', 'bird')
@@ -585,9 +596,52 @@ class VideoSerializer(serializers.ModelSerializer):
             'url': {'validators': []},
         }
 
+    def create(self, validated_data):
+        author = validated_data.pop('author', None)
+        video = Video.objects.create(author=author, **validated_data)
+        return video
+
+    def update(self, instance, validated_data):
+        author = validated_data.pop('author', '')
+        if author != '':
+            instance.author = author
+        url = validated_data.pop('url', '')
+        if url != '':
+            instance.url = url
+        thumbnail = validated_data.pop('thumbnail', '')
+        if thumbnail != '':
+            instance.thumbnail = thumbnail
+        category = validated_data.pop('category', '')
+        if category != '':
+            instance.category = category
+        format = validated_data.pop('format', '')
+        if format != '':
+            instance.format = format
+        location = validated_data.pop('location', '')
+        if location != '':
+            instance.location = location
+        duration_in_seconds = validated_data.pop('duration_in_seconds', '')
+        if duration_in_seconds != '':
+            instance.duration_in_seconds = duration_in_seconds
+        instance.save()
+        return instance
+
+
+class AudioReadSerializer(serializers.ModelSerializer):
+    author = AuthorSerializer(required=False, allow_null=True)
+    url = serializers.FileField(required=False)
+
+    class Meta:
+        model = Audio
+        fields = '__all__'
+        extra_kwargs = {
+            'url': {'validators': []},
+        }
+
 
 class AudioSerializer(serializers.ModelSerializer):
-    author = AuthorSerializer(required=False, allow_null=True)
+    author = PrimaryKeyRelatedField(queryset=Author.objects.all(), required=False)
+    url = serializers.FileField(required=False)
 
     class Meta:
         model = Audio
@@ -598,27 +652,13 @@ class AudioSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         author = validated_data.pop('author', None)
-        if author:
-            serializer = AuthorSerializer(data=author)
-            if serializer.is_valid():
-                author = serializer.save()
-            else:
-                print(serializer.errors)
         audio = Audio.objects.create(author=author, **validated_data)
         return audio
 
     def update(self, instance, validated_data):
-        author = validated_data.get('author', "")
-        if author != "":
-            if author:
-                serializer = ReferenceSerializer(instance.author, data=author)
-                if serializer.is_valid():
-                    author = serializer.save()
-                    instance.author = author
-                else:
-                    print(serializer.errors)
-            else:
-                instance.author = None
+        author = validated_data.pop('author', '')
+        if author != '':
+            instance.author = author
         url = validated_data.get('url', "")
         if url != "":
             instance.url = url
@@ -632,10 +672,20 @@ class AudioSerializer(serializers.ModelSerializer):
         return instance
 
 
+class VocalizationReadSerializer(serializers.ModelSerializer):
+    short_description = TextSerializer(required=False, allow_null=True)
+    long_description = TextSerializer(required=False, allow_null=True)
+    audio = AudioReadSerializer(required=False, allow_null=True)
+
+    class Meta:
+        model = Vocalization
+        exclude = ('id', 'bird')
+
+
 class VocalizationSerializer(serializers.ModelSerializer):
     short_description = TextSerializer(required=False, allow_null=True)
     long_description = TextSerializer(required=False, allow_null=True)
-    audio = AudioSerializer(required=False, allow_null=True)
+    audio = PrimaryKeyRelatedField(queryset=Audio.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = Vocalization
@@ -657,12 +707,6 @@ class VocalizationSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         audio = validated_data.pop('audio', None)
-        if audio:
-            serializer = AudioSerializer(data=audio)
-            if serializer.is_valid():
-                audio = serializer.save()
-            else:
-                print(serializer.errors)
         vocalization = Vocalization.objects.create(short_description=short_description,
                                                    long_description=long_description, audio=audio, **validated_data)
         return vocalization
@@ -692,15 +736,7 @@ class VocalizationSerializer(serializers.ModelSerializer):
                 instance.long_description = None
         audio = validated_data.get('audio', "")
         if audio != "":
-            if audio:
-                serializer = AudioSerializer(instance.audio, data=audio)
-                if serializer.is_valid():
-                    audio = serializer.save()
-                    instance.audio = audio
-                else:
-                    print(serializer.errors)
-            else:
-                instance.audio = None
+            instance.audio = audio
         category = validated_data.get('category', "")
         if category != "":
             instance.category = category
@@ -719,7 +755,7 @@ class SubspeciesNameSerializer(serializers.ModelSerializer):
 
 class DistributionSerializer(serializers.ModelSerializer):
     text = TextSerializer(required=False, allow_null=True)
-    location_map = ImageSerializer(required=False, allow_null=True)
+    location_map = PrimaryKeyRelatedField(queryset=Image.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = Distribution
@@ -734,12 +770,6 @@ class DistributionSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         location_map = validated_data.pop('location_map', None)
-        if location_map:
-            serializer = ImageSerializer(data=location_map)
-            if serializer.is_valid():
-                location_map = serializer.save()
-            else:
-                print(serializer.errors)
         distribution = Distribution.objects.create(text=text, location_map=location_map)
         return distribution
 
@@ -757,15 +787,7 @@ class DistributionSerializer(serializers.ModelSerializer):
                 instance.text = None
         location_map = validated_data.get('location_map', "")
         if location_map != "":
-            if location_map:
-                serializer = ImageSerializer(instance.location_map, data=location_map)
-                if serializer.is_valid():
-                    location_map = serializer.save()
-                    instance.location_map = location_map
-                else:
-                    print(serializer.errors)
-            else:
-                instance.location_map = None
+            instance.location_map = location_map
         instance.save()
         return instance
 
@@ -811,8 +833,8 @@ class FeedingSerializer(serializers.ModelSerializer):
                     print(serializer.errors)
             else:
                 instance.text = None
-        names_data = validated_data.get('names', None)
-        if names_data:
+        names_data = validated_data.get('names', '')
+        if names_data != '':
             names = []
             instance.names.all().delete()
             for name in names_data:
@@ -901,8 +923,8 @@ class SubspeciesSerializer(serializers.ModelSerializer):
                     print(serializer.errors)
             else:
                 instance.distribution = None
-        names_data = validated_data.get('names', None)
-        if names_data:
+        names_data = validated_data.get('names', '')
+        if names_data != '':
             names = []
             instance.names.all().delete()
             for name in names_data:
@@ -913,8 +935,8 @@ class SubspeciesSerializer(serializers.ModelSerializer):
                 else:
                     print(serializer.errors)
             instance.names.set(names)
-        images_data = validated_data.pop('images', None)
-        if images_data:
+        images_data = validated_data.pop('images', '')
+        if images_data != '':
             instance.images.all().delete()
             images = []
             for image in images_data:
@@ -925,8 +947,8 @@ class SubspeciesSerializer(serializers.ModelSerializer):
                 else:
                     print(serializer.errors)
             instance.images.set(images)
-        lengths_data = validated_data.pop('lengths', None)
-        if lengths_data:
+        lengths_data = validated_data.pop('lengths', '')
+        if lengths_data != '':
             lengths = []
             instance.lengths.all().delete()
             for len in lengths_data:
@@ -937,8 +959,8 @@ class SubspeciesSerializer(serializers.ModelSerializer):
                 else:
                     print(serializer.errors)
             instance.lengths.set(lengths)
-        weights_data = validated_data.pop('weights', None)
-        if weights_data:
+        weights_data = validated_data.pop('weights', '')
+        if weights_data != '':
             weights = []
             instance.weights.all().delete()
             for wei in weights_data:
@@ -958,8 +980,8 @@ class BirdSerializer(serializers.ModelSerializer):
     subspecies = SubspeciesSerializer(required=False, allow_null=True, many=True)
     common_names = CommonNameBirdSerializer(required=False, allow_null=True, many=True)
     scientific_names = ScientificNameBirdSerializer(required=False, many=True)
-    images = BirdImageSerializer(many=True, required=False, allow_null=True)
-    videos = VideoSerializer(many=True, required=False, allow_null=True)
+    images = PrimaryKeyRelatedField(many=True, queryset=BirdImage.objects.all(), required=False, allow_null=True)
+    videos = PrimaryKeyRelatedField(many=True, queryset=Video.objects.all(), required=False, allow_null=True)
     vocalizations = VocalizationSerializer(many=True, required=False, allow_null=True)
     description = TextSerializer(required=False, allow_null=True)
     identification = IdentificationSerializer(required=False, allow_null=True)
@@ -1088,26 +1110,16 @@ class BirdSerializer(serializers.ModelSerializer):
                 print(serializer.errors)
         bird.scientific_names.set(scientific_names)
         images = []
-        for image in images_data:
-            image['author'] = image['author'].id
-            serializer = BirdImageSerializer(data=image)
-            if serializer.is_valid():
-                im = serializer.save()
-                images.append(im)
-            else:
-                print(serializer.errors)
+        for im in images_data:
+            images.append(im)
         bird.images.set(images)
         videos = []
-        for video in videos_data:
-            serializer = VideoSerializer(data=video)
-            if serializer.is_valid():
-                vid = serializer.save()
-                videos.append(vid)
-            else:
-                print(serializer.errors)
+        for vi in videos_data:
+            videos.append(vi)
         bird.videos.set(videos)
         vocalizations = []
         for song in vocalizations_data:
+            song['audio'] = song['audio'].id
             serializer = VocalizationSerializer(data=song)
             if serializer.is_valid():
                 si = serializer.save()
@@ -1264,8 +1276,8 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 instance.own_citation = None
 
-        subspecies_data = validated_data.pop('subspecies', None)
-        if subspecies_data:
+        subspecies_data = validated_data.pop('subspecies', '')
+        if subspecies_data != '':
             subspecies = []
             instance.subspecies.all().delete()
             for subs in subspecies_data:
@@ -1276,8 +1288,8 @@ class BirdSerializer(serializers.ModelSerializer):
                 else:
                     print(serializer.errors)
             instance.subspecies.set(subspecies)
-        common_names_data = validated_data.pop('common_names', None)
-        if common_names_data:
+        common_names_data = validated_data.pop('common_names', '')
+        if common_names_data != '':
             common_names = []
             instance.common_names.all().delete()
             for com_name in common_names_data:
@@ -1288,8 +1300,8 @@ class BirdSerializer(serializers.ModelSerializer):
                 else:
                     print(serializer.errors)
             instance.common_names.set(common_names)
-        scientific_names_data = validated_data.pop('scientific_names', None)
-        if scientific_names_data:
+        scientific_names_data = validated_data.pop('scientific_names', '')
+        if scientific_names_data != '':
             scientific_names = []
             instance.scientific_names.all().delete()
             for sci_name in scientific_names_data:
@@ -1300,36 +1312,24 @@ class BirdSerializer(serializers.ModelSerializer):
                 else:
                     print(serializer.errors)
             instance.scientific_names.set(scientific_names)
-        images_data = validated_data.pop('images', None)
-        if images_data:
+        images_data = validated_data.pop('images', '')
+        if images_data != '':
             images = []
-            instance.images.all().delete()
-            for image in images_data:
-                image['author'] = image['author'].id
-                serializer = BirdImageSerializer(data=image)
-                if serializer.is_valid():
-                    si = serializer.save()
-                    images.append(si)
-                else:
-                    print(serializer.errors)
+            for im in images_data:
+                images.append(im)
             instance.images.set(images)
-        videos_data = validated_data.pop('videos', None)
-        if videos_data:
+        videos_data = validated_data.pop('videos', '')
+        if videos_data != '':
             videos = []
-            instance.videos.all().delete()
-            for video in videos_data:
-                serializer = VideoSerializer(data=video)
-                if serializer.is_valid():
-                    si = serializer.save()
-                    videos.append(si)
-                else:
-                    print(serializer.errors)
+            for vi in videos_data:
+                videos.append(vi)
             instance.videos.set(videos)
-        vocalizations_data = validated_data.pop('vocalizations', None)
-        if vocalizations_data:
+        vocalizations_data = validated_data.pop('vocalizations', '')
+        if vocalizations_data != '':
             vocalizations = []
             instance.vocalizations.all().delete()
             for song in vocalizations_data:
+                song['audio'] = song['audio'].id
                 serializer = VocalizationSerializer(data=song)
                 if serializer.is_valid():
                     obj = serializer.save()
@@ -1337,8 +1337,8 @@ class BirdSerializer(serializers.ModelSerializer):
                 else:
                     print(serializer.errors)
             instance.vocalizations.set(vocalizations)
-        reproduction_data = validated_data.pop('reproduction', [])
-        if reproduction_data:
+        reproduction_data = validated_data.pop('reproduction', '')
+        if reproduction_data != '':
             reproduction = []
             instance.reproduction.all().delete()
             for repr in reproduction_data:
@@ -1349,8 +1349,8 @@ class BirdSerializer(serializers.ModelSerializer):
                 else:
                     print(serializer.errors)
             instance.reproduction.set(reproduction)
-        behavior_data = validated_data.pop('behavior', [])
-        if behavior_data:
+        behavior_data = validated_data.pop('behavior', '')
+        if behavior_data != '':
             behavior = []
             instance.behavior.all().delete()
             for beh in behavior_data:
@@ -1361,8 +1361,8 @@ class BirdSerializer(serializers.ModelSerializer):
                 else:
                     print(serializer.errors)
             instance.behavior.set(behavior)
-        references_data = validated_data.pop('references', [])
-        if references_data:
+        references_data = validated_data.pop('references', '')
+        if references_data != '':
             references = []
             instance.references.all().delete()
             for ref in references_data:
@@ -1373,11 +1373,12 @@ class BirdSerializer(serializers.ModelSerializer):
                 else:
                     print(serializer.errors)
             instance.references.set(references)
-        authors_data = validated_data.pop('authors', [])
-        authors = []
-        for au in authors_data:
-            authors.append(au)
-        instance.authors.set(authors)
+        authors_data = validated_data.pop('authors', '')
+        if authors_data != '':
+            authors = []
+            for au in authors_data:
+                authors.append(au)
+            instance.authors.set(authors)
 
         draft_data = validated_data.pop('draft', None)
         if draft_data:
@@ -1394,7 +1395,7 @@ class BirdReadSerializer(serializers.ModelSerializer):
     scientific_names = ScientificNameBirdSerializer(required=False, many=True)
     images = BirdImageReadSerializer(many=True, required=False, allow_null=True)
     videos = VideoSerializer(many=True, required=False, allow_null=True)
-    vocalizations = VocalizationSerializer(many=True, required=False, allow_null=True)
+    vocalizations = VocalizationReadSerializer(many=True, required=False, allow_null=True)
     description = TextSerializer(required=False, allow_null=True)
     identification = IdentificationSerializer(required=False, allow_null=True)
     distribution = DistributionSerializer(required=False, allow_null=True)
@@ -1408,7 +1409,7 @@ class BirdReadSerializer(serializers.ModelSerializer):
     similar_species = SimilarSpeciesSerializer(required=False, allow_null=True)
     references = ReferenceSerializer(required=False, allow_null=True, many=True)
     own_citation = ReferenceSerializer(required=False, allow_null=True)
-    authors = AuthorSerializer(many=True, required=False, allow_null=True)
+    authors = AuthorReadSerializer(many=True, required=False, allow_null=True)
 
     class Meta:
         model = Bird
@@ -1426,10 +1427,41 @@ class BirdImageAuthorSerializer(serializers.ModelSerializer):
         }
 
 
-class AuthorImageSerializer(serializers.ModelSerializer):
+class VideoAuthorSerializer(serializers.ModelSerializer):
+    bird = BirdReadSerializer(required=False, allow_null=True)
+
+    class Meta:
+        model = Video
+        exclude = ('id', 'author')
+        extra_kwargs = {
+            'url': {'validators': []},
+        }
+
+
+class AudioAuthorSerializer(serializers.ModelSerializer):
+    bird = serializers.SerializerMethodField(required=False, allow_null=True)
+
+    class Meta:
+        model = BirdImage
+        exclude = ('id', 'author')
+        extra_kwargs = {
+            'url': {'validators': []},
+        }
+
+    def get_bird(self, obj):
+        try:
+            bird = obj.vocalization.all()[0].bird
+            return BirdSerializer(bird).data
+        except Exception:
+            return None
+
+
+class AuthorMediaSerializer(serializers.ModelSerializer):
     image = ImageSerializer(required=False, allow_null=True)
     description = TextSerializer(required=False, allow_null=True)
     images_authored = BirdImageAuthorSerializer(read_only=True, many=True, required=False)
+    videos_authored = VideoAuthorSerializer(read_only=True, many=True, required=False)
+    audios_authored = AudioAuthorSerializer(read_only=True, many=True, required=False)
 
     class Meta:
         model = Author

@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'rest_auth.registration',
+
+    'django_cleanup.apps.CleanupConfig',
 ]
 
 AUTH_USER_MODEL = 'users.CustomUser'
@@ -173,6 +175,9 @@ USE_TZ = True
 
 STATIC_URL = '/wikiaves_dev/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
+MEDIA_URL = '/wikiaves_dev/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # ALLAUTH
 ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'

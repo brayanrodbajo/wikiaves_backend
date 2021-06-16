@@ -87,9 +87,17 @@ class Type(models.Model):
     bird_behavior = models.ForeignKey('Bird', null=True, on_delete=models.SET_NULL, related_name='behavior')
 
 
+def upload_images(instance, filename):
+    return 'images/{filename}'.format(filename=filename)
+
+
+def upload_images_tn(instance, filename):
+    return 'images/thumbnails/{filename}'.format(filename=filename)
+
+
 class Image(models.Model):
-    url = models.URLField()
-    thumbnail = models.URLField(null=True, blank=True)
+    url = models.ImageField(upload_to=upload_images, max_length=500)
+    thumbnail = models.ImageField(null=True, blank=True, upload_to=upload_images_tn, max_length=500)
     format = models.CharField(max_length=4, null=True, blank=True)
     height = models.FloatField(null=True, blank=True)
     width = models.FloatField(null=True, blank=True)
@@ -159,29 +167,33 @@ class BirdImage(Image):
     author = models.ForeignKey(Author, related_name='images_authored', null=True, on_delete=models.SET_NULL)
 
 
+def upload_videos(instance, filename):
+    return 'videos/{filename}'.format(filename=filename)
+
+
+def upload_videos_tn(instance, filename):
+    return 'videos/thumbnails/{filename}'.format(filename=filename)
+
+
 class Video(models.Model):
-    BIRD = 'BIRD'
-    FAMILY = 'FAMILY'
-    ORDER = 'ORDER'
-    CATEGORY_CHOICES = (
-        ('BIRD', BIRD),
-        ('FAMILY', FAMILY),
-        ('ORDER', ORDER),
-    )
-    url = models.URLField()
-    thumbnail = models.URLField(null=True, blank=True)
-    category = models.CharField(max_length=6, choices=CATEGORY_CHOICES, null=True, blank=True)
-    format = models.CharField(max_length=4)
+    url = models.FileField(upload_to=upload_videos, max_length=500)
+    thumbnail = models.ImageField(null=True, blank=True, upload_to=upload_videos_tn, max_length=500)
+    category = models.CharField(max_length=50, null=True, blank=True)
+    format = models.CharField(max_length=4, null=True, blank=True)
     location = models.PointField(null=True, blank=True)
-    seconds = models.FloatField(null=True, blank=True)
+    duration_in_seconds = models.FloatField(null=True, blank=True)
     bird = models.ForeignKey(Bird, related_name='videos', null=True, on_delete=models.SET_NULL)
     author = models.ForeignKey(Author, related_name='videos_authored', null=True, on_delete=models.SET_NULL)
 
 
+def upload_audios(instance, filename):
+    return 'audios/{filename}'.format(filename=filename)
+
+
 class Audio(models.Model):
-    url = models.URLField()
+    url = models.FileField(upload_to=upload_audios, max_length=500)
     author = models.ForeignKey(Author, related_name='audios_authored', null=True, on_delete=models.SET_NULL)
-    format = models.CharField(max_length=4)
+    format = models.CharField(max_length=4, null=True, blank=True)
     location = models.PointField(null=True, blank=True)
 
 

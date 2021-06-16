@@ -4,13 +4,16 @@ from rest_framework import generics, viewsets, views, status, filters
 from rest_framework.decorators import api_view
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from drf_rw_serializers.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView, CreateAPIView
+from rest_framework.views import APIView
+from django.db.models import Q
 
-
-from birds.models import Bird, Order, Family, Author
+from birds.models import Bird, Order, Family, Author, BirdImage, Image, Video, Audio
 from birds.serializers import BirdSerializer, OrderSerializer, FamilySerializer, AuthorSerializer, AuthorIdsSerializer, \
-    BirdReadSerializer, FamilyReadSerializer, AuthorImageSerializer
+    BirdReadSerializer, FamilyReadSerializer, AuthorMediaSerializer, BirdImageSerializer, ImageSerializer, \
+    VideoSerializer, AudioSerializer, BirdImageReadSerializer, VideoReadSerializer, AudioReadSerializer
 from birds.serializers import BirdIdsSerializer, OrderIdsSerializer, FamilyIdsSerializer
 from users.permissions import AdminCustomPermission, EditorCustomPermission
 
@@ -32,7 +35,7 @@ class Birds(ListCreateAPIView):
             queryset = queryset.filter(family=family_id)
         id_only = self.request.query_params.get('id_only', None)
         if id_only:
-            self.serializer_class = BirdIdsSerializer
+            self.read_serializer_class = BirdIdsSerializer
         return queryset
 
 
@@ -41,6 +44,61 @@ class SingleBird(RetrieveUpdateDestroyAPIView):
     write_serializer_class = BirdSerializer
     read_serializer_class = BirdReadSerializer
     permission_classes = (Or(AdminCustomPermission, EditorCustomPermission), )
+
+
+class Images(CreateAPIView):
+    permission_classes = (Or(AdminCustomPermission, EditorCustomPermission),)
+    parser_classes = [MultiPartParser, FormParser]
+    serializer_class = ImageSerializer
+    queryset = Image.objects.all()
+
+
+class BirdImages(ListCreateAPIView):
+    permission_classes = (Or(AdminCustomPermission, EditorCustomPermission),)
+    parser_classes = [MultiPartParser, FormParser]
+    write_serializer_class = BirdImageSerializer
+    read_serializer_class = BirdImageReadSerializer
+    queryset = BirdImage.objects.all()
+
+
+class SingleBirdImage(RetrieveUpdateDestroyAPIView):
+    permission_classes = (Or(AdminCustomPermission, EditorCustomPermission),)
+    parser_classes = [MultiPartParser, FormParser]
+    write_serializer_class = BirdImageSerializer
+    read_serializer_class = BirdImageReadSerializer
+    queryset = BirdImage.objects.all()
+
+
+class Videos(ListCreateAPIView):
+    permission_classes = (Or(AdminCustomPermission, EditorCustomPermission),)
+    parser_classes = [MultiPartParser, FormParser]
+    write_serializer_class = VideoSerializer
+    read_serializer_class = VideoReadSerializer
+    queryset = Video.objects.all()
+
+
+class SingleVideo(RetrieveUpdateDestroyAPIView):
+    permission_classes = (Or(AdminCustomPermission, EditorCustomPermission),)
+    parser_classes = [MultiPartParser, FormParser]
+    write_serializer_class = VideoSerializer
+    read_serializer_class = VideoReadSerializer
+    queryset = Video.objects.all()
+
+
+class Audios(ListCreateAPIView):
+    permission_classes = (Or(AdminCustomPermission, EditorCustomPermission),)
+    parser_classes = [MultiPartParser, FormParser]
+    write_serializer_class = AudioSerializer
+    read_serializer_class = AudioReadSerializer
+    queryset = Audio.objects.all()
+
+
+class SingleAudio(RetrieveUpdateDestroyAPIView):
+    permission_classes = (Or(AdminCustomPermission, EditorCustomPermission),)
+    parser_classes = [MultiPartParser, FormParser]
+    write_serializer_class = AudioSerializer
+    read_serializer_class = AudioReadSerializer
+    queryset = Audio.objects.all()
 
 
 class Orders(ListCreateAPIView):
@@ -80,7 +138,7 @@ class Families(ListCreateAPIView):
             queryset = queryset.filter(order=order_id)
         id_only = self.request.query_params.get('id_only', None)
         if id_only:
-            self.serializer_class = OrderIdsSerializer
+            self.read_serializer_class = OrderIdsSerializer
         return queryset
 
 
@@ -120,7 +178,7 @@ def get_names(request):
 
 class Authors(ListCreateAPIView):
     queryset = Author.objects.all()
-    read_serializer_class = AuthorImageSerializer
+    read_serializer_class = AuthorMediaSerializer
     write_serializer_class = AuthorSerializer
     pagination_class = LimitOffsetPagination
     permission_classes = (AdminCustomPermission, )
@@ -128,15 +186,24 @@ class Authors(ListCreateAPIView):
     filter_backends = (filters.SearchFilter,)
 
     def get_queryset(self):
-        queryset = Author.objects.filter(images_authored__isnull=False).distinct()
+        queryset = Author.objects.filter(
+            Q(images_authored__isnull=False) | Q(videos_authored__isnull=False) | Q(audios_authored__isnull=False)
+        ).distinct()
+        media_type = self.request.query_params.get('media_type', None)
+        if media_type == 'images':
+            queryset = Author.objects.filter(images_authored__isnull=False).distinct()
+        elif media_type == 'videos':
+            queryset = Author.objects.filter(videos_authored__isnull=False).distinct()
+        elif media_type == 'audios':
+            queryset = Author.objects.filter(audios_authored__isnull=False).distinct()
         id_only = self.request.query_params.get('id_only', None)
         if id_only:
-            self.serializer_class = AuthorIdsSerializer
+            self.read_serializer_class = AuthorIdsSerializer
         return queryset
 
 
 class SingleAuthor(RetrieveUpdateDestroyAPIView):
     queryset = Author.objects.all()
-    read_serializer_class = AuthorImageSerializer
+    read_serializer_class = AuthorMediaSerializer
     write_serializer_class = AuthorSerializer
     permission_classes = (AdminCustomPermission, )
