@@ -88,3 +88,6 @@ ENV/
 
 # Spyder project settings
 .spyderproject
+
+# Media files
+media/*
