@@ -1410,10 +1410,45 @@ class BirdReadSerializer(serializers.ModelSerializer):
     references = ReferenceSerializer(required=False, allow_null=True, many=True)
     own_citation = ReferenceSerializer(required=False, allow_null=True)
     authors = AuthorReadSerializer(many=True, required=False, allow_null=True)
+    selected_names = serializers.SerializerMethodField(required=False, allow_null=True)
 
     class Meta:
         model = Bird
         exclude = ('similar_species_class_id', )
+
+    def get_selected_names(self, obj):
+        try:
+            s_n_reordered = []
+            c_n_es = []
+            c_n_en = []
+            scientific_names = obj.scientific_names.all()
+            common_names = obj.common_names.all()
+            for s_n in scientific_names:
+                if s_n.main:
+                    s_n_reordered.append(s_n.name)
+            for s_n in scientific_names:
+                if not s_n.main:
+                    s_n_reordered.append(s_n.name)
+            for c_n in common_names:
+                if c_n.main and c_n.name.language == 'es':
+                    c_n_es.append(c_n.name.text)
+            for c_n in common_names:
+                if not c_n.main and c_n.name.language == 'es':
+                    c_n_es.append(c_n.name.text)
+            for c_n in common_names:
+                if c_n.main and c_n.name.language == 'en':
+                    c_n_en.append(c_n.name.text)
+            for c_n in common_names:
+                if not c_n.main and c_n.name.language == 'en':
+                    c_n_en.append(c_n.name.text)
+            selected_names = {
+                "scientific_names": s_n_reordered,
+                "common_names_es": c_n_es,
+                "common_names_en": c_n_en
+            }
+            return selected_names
+        except Exception:
+            return None
 
 
 class BirdImageAuthorSerializer(serializers.ModelSerializer):
