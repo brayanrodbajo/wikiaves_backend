@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 # from django.db import models
 from django.contrib.gis.db import models
+from django.db.models import Q
+from rest_framework.exceptions import ValidationError
 
 
 class Text(models.Model):
@@ -208,8 +210,17 @@ class Vocalization(models.Model):
     short_description = models.ForeignKey(Text, related_name='vocalization_short', null=True, on_delete=models.SET_NULL)
     long_description = models.ForeignKey(Text, related_name='vocalization_long', null=True, on_delete=models.SET_NULL)
     audio = models.ForeignKey(Audio, related_name='vocalization', null=True, on_delete=models.SET_NULL)
-    xenocantoID = models.CharField(max_length=40, null=True)
+    xenocanto_ID = models.CharField(max_length=40, null=True)
+    xenocanto_url = models.URLField(null=True, blank=True)
     bird = models.ForeignKey(Bird, related_name='vocalizations', null=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=Q(xenocanto_url__isnull=True) | Q(audio__isnull=True),
+                name='one_of_both_xenocanto_url_or_audio_must_be_null'
+            )
+        ]
 
 
 class Measure(models.Model):

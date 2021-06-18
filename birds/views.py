@@ -1,4 +1,6 @@
 from django.contrib.auth.models import User
+from django.db import IntegrityError
+from django.views.defaults import bad_request
 from rest_condition import Or
 from rest_framework import generics, viewsets, views, status, filters
 from rest_framework.decorators import api_view
@@ -38,12 +40,26 @@ class Birds(ListCreateAPIView):
             self.read_serializer_class = BirdIdsSerializer
         return queryset
 
+    def create(self, request, *args, **kwargs):
+        try:
+            return super(ListCreateAPIView, self).create(request, *args, **kwargs)
+        except IntegrityError as e:
+            resp = {'detail': str(e)}
+            return Response(resp, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class SingleBird(RetrieveUpdateDestroyAPIView):
     queryset = Bird.objects.all()
     write_serializer_class = BirdSerializer
     read_serializer_class = BirdReadSerializer
     permission_classes = (Or(AdminCustomPermission, EditorCustomPermission), )
+
+    def update(self, request, *args, **kwargs):
+        try:
+            return super(RetrieveUpdateDestroyAPIView, self).update(request, *args, **kwargs)
+        except IntegrityError as e:
+            resp = {'detail': str(e)}
+            return Response(resp, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class Images(CreateAPIView):

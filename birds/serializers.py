@@ -1,6 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
-from rest_framework import serializers
+from rest_framework import serializers, status
 from rest_framework.relations import PrimaryKeyRelatedField
+from rest_framework.response import Response
 
 from birds.models import Text, Author, Image, ScientificNameOrder, ScientificNameFamily, CommonNameBird, \
     ScientificNameBird, Order, Family, Identification, Type, Measure, Value, Reference, Bird, Video, \
@@ -708,7 +709,7 @@ class VocalizationSerializer(serializers.ModelSerializer):
                 print(serializer.errors)
         audio = validated_data.pop('audio', None)
         vocalization = Vocalization.objects.create(short_description=short_description,
-                                                   long_description=long_description, audio=audio, **validated_data)
+                                               long_description=long_description, audio=audio, **validated_data)
         return vocalization
 
     def update(self, instance, validated_data):
@@ -740,9 +741,12 @@ class VocalizationSerializer(serializers.ModelSerializer):
         category = validated_data.get('category', "")
         if category != "":
             instance.category = category
-        xenocantoID = validated_data.get('xenocantoID', "")
-        if xenocantoID != "":
-            instance.xenocantoID = xenocantoID
+        xenocanto_ID = validated_data.get('xenocanto_ID', "")
+        if xenocanto_ID != "":
+            instance.xenocanto_ID = xenocanto_ID
+        xenocanto_url = validated_data.get('xenocanto_url', "")
+        if xenocanto_url != "":
+            instance.xenocanto_url = xenocanto_url
         instance.save()
         return instance
 
