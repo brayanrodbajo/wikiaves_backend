@@ -1524,7 +1524,7 @@ class AudioAuthorSerializer(serializers.ModelSerializer):
     bird = serializers.SerializerMethodField(required=False, allow_null=True)
 
     class Meta:
-        model = BirdImage
+        model = Audio
         exclude = ('id', 'author')
         extra_kwargs = {
             'url': {'validators': []},
@@ -1532,8 +1532,8 @@ class AudioAuthorSerializer(serializers.ModelSerializer):
 
     def get_bird(self, obj):
         try:
-            bird = obj.vocalization.all()[0].bird
-            return BirdSerializer(bird).data
+            bird = obj.vocalization.bird
+            return BirdReadSerializer(bird).data
         except Exception:
             return None
 
