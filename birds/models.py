@@ -197,6 +197,13 @@ class Audio(models.Model):
     author = models.ForeignKey(Author, related_name='audios_authored', null=True, on_delete=models.SET_NULL)
     format = models.CharField(max_length=4, null=True, blank=True)
     location = models.PointField(null=True, blank=True)
+    vocalization = models.ForeignKey('Vocalization', related_name='audios', null=True, on_delete=models.SET_NULL)
+
+
+class Xenocanto(models.Model):
+    id = models.CharField(max_length=40, primary_key=True)
+    url = models.URLField()
+    vocalization = models.ForeignKey('Vocalization', related_name='xenocantos', null=True, on_delete=models.SET_NULL)
 
 
 class Vocalization(models.Model):
@@ -209,18 +216,7 @@ class Vocalization(models.Model):
     category = models.CharField(max_length=6, choices=CATEGORY_CHOICES)
     short_description = models.ForeignKey(Text, related_name='vocalization_short', null=True, on_delete=models.SET_NULL)
     long_description = models.ForeignKey(Text, related_name='vocalization_long', null=True, on_delete=models.SET_NULL)
-    audio = models.ForeignKey(Audio, related_name='vocalization', null=True, on_delete=models.SET_NULL)
-    xenocanto_ID = models.CharField(max_length=40, null=True)
-    xenocanto_url = models.URLField(null=True, blank=True)
     bird = models.ForeignKey(Bird, related_name='vocalizations', null=True, on_delete=models.SET_NULL)
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                check=Q(xenocanto_url__isnull=True) | Q(audio__isnull=True),
-                name='one_of_both_xenocanto_url_or_audio_must_be_null'
-            )
-        ]
 
 
 class Measure(models.Model):
@@ -237,7 +233,7 @@ class Measure(models.Model):
         ('kg', KG),
     )
     value = models.ForeignKey(Value, null=True, related_name='measure', on_delete=models.SET_NULL)
-    name = models.CharField(max_length=100) # in spanish
+    name = models.CharField(max_length=100)  # in spanish
     unit = models.CharField(max_length=2, choices=UNIT_CHOICES)
     reference = models.TextField(null=True, blank=True)
     identification_lengths = models.ForeignKey(Identification, related_name='lengths', null=True,
@@ -245,9 +241,9 @@ class Measure(models.Model):
     identification_weights = models.ForeignKey(Identification, related_name='weights', null=True,
                                                on_delete=models.SET_NULL)
     identification_lengths_subs = models.ForeignKey(Subspecies, related_name='lengths', null=True,
-                                               on_delete=models.SET_NULL)
+                                                    on_delete=models.SET_NULL)
     identification_weights_subs = models.ForeignKey(Subspecies, related_name='weights', null=True,
-                                               on_delete=models.SET_NULL)
+                                                    on_delete=models.SET_NULL)
 
 
 class ScientificNameOrder(models.Model):

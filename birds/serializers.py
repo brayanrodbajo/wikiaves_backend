@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 from birds.models import Text, Author, Image, ScientificNameOrder, ScientificNameFamily, CommonNameBird, \
     ScientificNameBird, Order, Family, Identification, Type, Measure, Value, Reference, Bird, Video, \
-    BirdImage, Audio, Subspecies, SubspeciesName, Vocalization, Distribution, SimilarSpecies, Feeding
+    BirdImage, Audio, Subspecies, SubspeciesName, Vocalization, Distribution, SimilarSpecies, Feeding, Xenocanto
 
 
 class TextSerializer(serializers.ModelSerializer):
@@ -580,7 +580,7 @@ class VideoReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Video
-        exclude = ('bird', )
+        exclude = ('bird',)
         extra_kwargs = {
             'url': {'validators': []},
         }
@@ -673,10 +673,20 @@ class AudioSerializer(serializers.ModelSerializer):
         return instance
 
 
+class XenocantoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Xenocanto
+        exclude = ('vocalization',)
+        extra_kwargs = {
+            'url': {'validators': []},
+        }
+
+
 class VocalizationReadSerializer(serializers.ModelSerializer):
     short_description = TextSerializer(required=False, allow_null=True)
     long_description = TextSerializer(required=False, allow_null=True)
-    audio = AudioReadSerializer(required=False, allow_null=True)
+    audios = AudioSerializer(many=True, required=False, allow_null=True)
+    xenocantos = XenocantoSerializer(many=True, required=False, allow_null=True)
 
     class Meta:
         model = Vocalization
@@ -686,7 +696,8 @@ class VocalizationReadSerializer(serializers.ModelSerializer):
 class VocalizationSerializer(serializers.ModelSerializer):
     short_description = TextSerializer(required=False, allow_null=True)
     long_description = TextSerializer(required=False, allow_null=True)
-    audio = PrimaryKeyRelatedField(queryset=Audio.objects.all(), required=False, allow_null=True)
+    audios = PrimaryKeyRelatedField(many=True, queryset=Audio.objects.all(), required=False, allow_null=True)
+    xenocantos = XenocantoSerializer(many=True, required=False, allow_null=True)
 
     class Meta:
         model = Vocalization
@@ -707,9 +718,23 @@ class VocalizationSerializer(serializers.ModelSerializer):
                 long_description = serializer.save()
             else:
                 print(serializer.errors)
-        audio = validated_data.pop('audio', None)
+        audios_data = validated_data.pop('audios', [])
+        xenocantos_data = validated_data.pop('xenocantos', [])
         vocalization = Vocalization.objects.create(short_description=short_description,
-                                               long_description=long_description, audio=audio, **validated_data)
+                                                   long_description=long_description, **validated_data)
+        audios = []
+        for au in audios_data:
+            audios.append(au)
+        vocalization.audios.set(audios)
+        xenocantos = []
+        for xc in xenocantos_data:
+            serializer = XenocantoSerializer(data=xc)
+            if serializer.is_valid():
+                obj = serializer.save()
+                xenocantos.append(obj)
+            else:
+                print(serializer.errors)
+        vocalization.xenocantos.set(xenocantos)
         return vocalization
 
     def update(self, instance, validated_data):
@@ -735,18 +760,27 @@ class VocalizationSerializer(serializers.ModelSerializer):
                     print(serializer.errors)
             else:
                 instance.long_description = None
-        audio = validated_data.get('audio', "")
-        if audio != "":
-            instance.audio = audio
+        audios_data = validated_data.pop('audios', '')
+        if audios_data != '':
+            audios = []
+            for au in audios_data:
+                audios.append(au)
+            instance.audios.set(audios)
         category = validated_data.get('category', "")
         if category != "":
             instance.category = category
-        xenocanto_ID = validated_data.get('xenocanto_ID', "")
-        if xenocanto_ID != "":
-            instance.xenocanto_ID = xenocanto_ID
-        xenocanto_url = validated_data.get('xenocanto_url', "")
-        if xenocanto_url != "":
-            instance.xenocanto_url = xenocanto_url
+        xenocantos_data = validated_data.get('xenocantos', '')
+        if xenocantos_data != '':
+            xenocantos = []
+            instance.xenocantos.all().delete()
+            for xc in xenocantos_data:
+                serializer = XenocantoSerializer(data=xc)
+                if serializer.is_valid():
+                    obj = serializer.save()
+                    xenocantos.append(obj)
+                else:
+                    print(serializer.errors)
+            instance.xenocantos.set(xenocantos)
         instance.save()
         return instance
 
@@ -853,10 +887,22 @@ class FeedingSerializer(serializers.ModelSerializer):
         return instance
 
 
+class SubspeciesReadSerializer(serializers.ModelSerializer):
+    names = SubspeciesNameSerializer(required=False, allow_null=True, many=True)
+    distribution = DistributionSerializer(required=False, allow_null=True)
+    images = BirdImageReadSerializer(many=True, required=False, allow_null=True)
+    lengths = MeasureSerializer(required=False, allow_null=True, many=True)
+    weights = MeasureSerializer(required=False, allow_null=True, many=True)
+
+    class Meta:
+        model = Subspecies
+        fields = ('names', 'distribution', 'images', 'lengths', 'weights')
+
+
 class SubspeciesSerializer(serializers.ModelSerializer):
     names = SubspeciesNameSerializer(required=False, allow_null=True, many=True)
     distribution = DistributionSerializer(required=False, allow_null=True)
-    images = BirdImageSerializer(many=True, required=False, allow_null=True)
+    images = PrimaryKeyRelatedField(many=True, queryset=BirdImage.objects.all(), required=False, allow_null=True)
     lengths = MeasureSerializer(required=False, allow_null=True, many=True)
     weights = MeasureSerializer(required=False, allow_null=True, many=True)
 
@@ -887,13 +933,8 @@ class SubspeciesSerializer(serializers.ModelSerializer):
                 print(serializer.errors)
         subspecies.names.set(names)
         images = []
-        for image in images_data:
-            serializer = BirdImageSerializer(data=image)
-            if serializer.is_valid():
-                im = serializer.save()
-                images.append(im)
-            else:
-                print(serializer.errors)
+        for im in images_data:
+            images.append(im)
         subspecies.images.set(images)
         lengths = []
         for len in lengths_data:
@@ -941,15 +982,9 @@ class SubspeciesSerializer(serializers.ModelSerializer):
             instance.names.set(names)
         images_data = validated_data.pop('images', '')
         if images_data != '':
-            instance.images.all().delete()
             images = []
-            for image in images_data:
-                serializer = BirdImageSerializer(data=image)
-                if serializer.is_valid():
-                    si = serializer.save()
-                    images.append(si)
-                else:
-                    print(serializer.errors)
+            for im in images_data:
+                images.append(im)
             instance.images.set(images)
         lengths_data = validated_data.pop('lengths', '')
         if lengths_data != '':
@@ -1004,7 +1039,7 @@ class BirdSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Bird
-        exclude = ('similar_species_class_id', )
+        exclude = ('similar_species_class_id',)
 
     def get_fields(self):
         fields = super(BirdSerializer, self).get_fields()
@@ -1058,7 +1093,8 @@ class BirdSerializer(serializers.ModelSerializer):
                 print(serializer.errors)
         similar_species = validated_data.pop('similar_species', None)
         if similar_species:
-            similar_species['bird_ids'] = [ss.id for ss in similar_species['bird_ids']]
+            if 'bird_ids' in similar_species:
+                similar_species['bird_ids'] = [ss.id for ss in similar_species['bird_ids']]
             serializer = SimilarSpeciesSerializer(data=similar_species)
             if serializer.is_valid():
                 similar_species = serializer.save()
@@ -1088,6 +1124,8 @@ class BirdSerializer(serializers.ModelSerializer):
 
         subspecies = []
         for subs in subspecies_data:
+            if 'images' in subs:
+                subs['images'] = [im.id for im in subs['images']]
             serializer = SubspeciesSerializer(data=subs)
             if serializer.is_valid():
                 obj = serializer.save()
@@ -1123,7 +1161,8 @@ class BirdSerializer(serializers.ModelSerializer):
         bird.videos.set(videos)
         vocalizations = []
         for song in vocalizations_data:
-            song['audio'] = song['audio'].id
+            if 'audios' in song:
+                song['audios'] = [au.id for au in song['audios']]
             serializer = VocalizationSerializer(data=song)
             if serializer.is_valid():
                 si = serializer.save()
@@ -1259,7 +1298,8 @@ class BirdSerializer(serializers.ModelSerializer):
         similar_species = validated_data.pop('similar_species', "")
         if similar_species != "":
             if similar_species:
-                similar_species['bird_ids'] = [ss.id for ss in similar_species['bird_ids']]
+                if 'bird_ids' in similar_species:
+                    similar_species['bird_ids'] = [ss.id for ss in similar_species['bird_ids']]
                 serializer = SimilarSpeciesSerializer(instance.similar_species, data=similar_species)
                 if serializer.is_valid():
                     similar_species = serializer.save()
@@ -1285,6 +1325,8 @@ class BirdSerializer(serializers.ModelSerializer):
             subspecies = []
             instance.subspecies.all().delete()
             for subs in subspecies_data:
+                if 'images' in subs:
+                    subs['images'] = [im.id for im in subs['images']]
                 serializer = SubspeciesSerializer(data=subs)
                 if serializer.is_valid():
                     obj = serializer.save()
@@ -1333,7 +1375,8 @@ class BirdSerializer(serializers.ModelSerializer):
             vocalizations = []
             instance.vocalizations.all().delete()
             for song in vocalizations_data:
-                song['audio'] = song['audio'].id
+                if 'audios' in song:
+                    song['audios'] = [au.id for au in song['audios']]
                 serializer = VocalizationSerializer(data=song)
                 if serializer.is_valid():
                     obj = serializer.save()
@@ -1394,7 +1437,7 @@ class BirdSerializer(serializers.ModelSerializer):
 
 class BirdReadSerializer(serializers.ModelSerializer):
     family = FamilyReadSerializer(required=False)
-    subspecies = SubspeciesSerializer(required=False, allow_null=True, many=True)
+    subspecies = SubspeciesReadSerializer(required=False, allow_null=True, many=True)
     common_names = CommonNameBirdSerializer(required=False, allow_null=True, many=True)
     scientific_names = ScientificNameBirdSerializer(required=False, many=True)
     images = BirdImageReadSerializer(many=True, required=False, allow_null=True)
@@ -1418,7 +1461,7 @@ class BirdReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Bird
-        exclude = ('similar_species_class_id', )
+        exclude = ('similar_species_class_id',)
 
     def get_selected_names(self, obj):
         try:

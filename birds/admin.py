@@ -100,7 +100,7 @@ class AudioAdmin(admin.ModelAdmin):
 
 @admin.register(Vocalization)
 class VocalizationAdmin(admin.ModelAdmin):
-    list_display = ('bird', 'audio', 'category', 'short_description', 'long_description')
+    list_display = ('bird', 'audios', 'xenocantos', 'category', 'short_description', 'long_description')
 
 
 @admin.register(Measure)
