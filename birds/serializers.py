@@ -676,7 +676,7 @@ class AudioSerializer(serializers.ModelSerializer):
 class XenocantoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Xenocanto
-        exclude = ('vocalization',)
+        exclude = ('vocalization', 'id')
         extra_kwargs = {
             'url': {'validators': []},
         }

@@ -201,7 +201,7 @@ class Audio(models.Model):
 
 
 class Xenocanto(models.Model):
-    id = models.CharField(max_length=40, primary_key=True)
+    XC_id = models.CharField(max_length=40)
     url = models.URLField()
     vocalization = models.ForeignKey('Vocalization', related_name='xenocantos', null=True, on_delete=models.SET_NULL)
 
