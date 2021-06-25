@@ -5,13 +5,20 @@ from rest_framework.response import Response
 
 from birds.models import Text, Author, Image, ScientificNameOrder, ScientificNameFamily, CommonNameBird, \
     ScientificNameBird, Order, Family, Identification, Type, Measure, Value, Reference, Bird, Video, \
-    BirdImage, Audio, Subspecies, SubspeciesName, Vocalization, Distribution, SimilarSpecies, Feeding, Xenocanto
+    BirdImage, Audio, Subspecies, SubspeciesName, Vocalization, Distribution, SimilarSpecies, Feeding, Xenocanto  # , \
+    # Location
 
 
 class TextSerializer(serializers.ModelSerializer):
     class Meta:
         model = Text
         fields = ('language', 'text')
+
+
+# class LocationSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Location
+#         fields = ('x', 'y', 'z', 'text')
 
 
 class ImageSerializer(serializers.ModelSerializer):
@@ -1457,19 +1464,21 @@ class BirdReadSerializer(serializers.ModelSerializer):
     references = ReferenceSerializer(required=False, allow_null=True, many=True)
     own_citation = ReferenceSerializer(required=False, allow_null=True)
     authors = AuthorReadSerializer(many=True, required=False, allow_null=True)
-    selected_names = serializers.SerializerMethodField(required=False, allow_null=True)
+    featured_data = serializers.SerializerMethodField(required=False, allow_null=True)
 
     class Meta:
         model = Bird
         exclude = ('similar_species_class_id',)
 
-    def get_selected_names(self, obj):
+    def get_featured_data(self, obj):  # returns main image and names but the first element is the main and only a list of stris
         try:
             s_n_reordered = []
             c_n_es = []
             c_n_en = []
+            main_image = None
             scientific_names = obj.scientific_names.all()
             common_names = obj.common_names.all()
+            images = obj.images.all()
             for s_n in scientific_names:
                 if s_n.main:
                     s_n_reordered.append(s_n.name)
@@ -1488,12 +1497,16 @@ class BirdReadSerializer(serializers.ModelSerializer):
             for c_n in common_names:
                 if not c_n.main and c_n.name.language == 'en':
                     c_n_en.append(c_n.name.text)
-            selected_names = {
+            for image in images:
+                if image.main:
+                    main_image = image.url
+            featured_data = {
                 "scientific_names": s_n_reordered,
                 "common_names_es": c_n_es,
-                "common_names_en": c_n_en
+                "common_names_en": c_n_en,
+                "main_image": main_image
             }
-            return selected_names
+            return featured_data
         except Exception:
             return None
 
