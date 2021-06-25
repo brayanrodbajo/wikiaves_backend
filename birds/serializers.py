@@ -1499,13 +1499,12 @@ class BirdReadSerializer(serializers.ModelSerializer):
                     c_n_en.append(c_n.name.text)
             for image in images:
                 if image.main:
-                    # main_image = image.url
-                    pass
+                    main_image = image.url.url
             featured_data = {
                 "scientific_names": s_n_reordered,
                 "common_names_es": c_n_es,
                 "common_names_en": c_n_en,
-                # "main_image": main_image
+                "main_image": main_image
             }
             return featured_data
         except Exception:
