@@ -12,7 +12,6 @@ urlpatterns = [
     path('<int:pk>', views.SingleBird.as_view()),
     path('orders', views.Orders.as_view()),
     path('images', views.Images.as_view()),
-    path('locations', views.Locations.as_view()),
     path('bird_images', views.BirdImages.as_view()),
     path('bird_images/<int:pk>', views.SingleBirdImage.as_view()),
     path('videos', views.Videos.as_view()),

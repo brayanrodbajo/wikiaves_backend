@@ -63,12 +63,6 @@ class SingleBird(RetrieveUpdateDestroyAPIView):
             return Response(resp, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class Locations(CreateAPIView):
-    permission_classes =  (AdminCustomPermission, )
-    serializer_class = LocationSerializer
-    queryset = Location.objects.all()
-
-
 class Images(CreateAPIView):
     permission_classes = (Or(AdminCustomPermission, EditorCustomPermission),)
     parser_classes = [MultiPartParser, FormParser]

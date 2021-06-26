@@ -1,3 +1,5 @@
+import json
+
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers, status
 from rest_framework.relations import PrimaryKeyRelatedField
@@ -20,7 +22,7 @@ class LocationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Location
-        fields = '__all__'
+        fields = ('point', 'description')
 
 
 class ImageSerializer(serializers.ModelSerializer):
@@ -548,7 +550,7 @@ class IdentificationSerializer(serializers.ModelSerializer):
 class BirdImageSerializer(serializers.ModelSerializer):
     author = PrimaryKeyRelatedField(queryset=Author.objects.all(), required=False)
     url = serializers.ImageField(required=False)
-    location = PrimaryKeyRelatedField(queryset=Location.objects.all(), required=False, allow_null=True)
+    location = serializers.CharField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = BirdImage
@@ -559,7 +561,14 @@ class BirdImageSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         author = validated_data.pop('author', None)
-        image = BirdImage.objects.create(author=author, **validated_data)
+        location = validated_data.pop('location', None)
+        if location:
+            serializer = LocationSerializer(data=json.loads(location))
+            if serializer.is_valid():
+                location = serializer.save()
+            else:
+                print(serializer.errors)
+        image = BirdImage.objects.create(author=author, **validated_data, location=location)
         return image
 
     def update(self, instance, validated_data):
@@ -571,7 +580,15 @@ class BirdImageSerializer(serializers.ModelSerializer):
             instance.category = category
         location = validated_data.get('location', "")
         if location != "":
-            instance.location = location
+            if location:
+                serializer = LocationSerializer(instance.location, data=json.loads(location))
+                if serializer.is_valid():
+                    location = serializer.save()
+                    instance.location = location
+                else:
+                    print(serializer.errors)
+            else:
+                instance.short_description = None
         main = validated_data.get('main', "")
         if main != "":
             instance.main = main
@@ -582,6 +599,7 @@ class BirdImageSerializer(serializers.ModelSerializer):
 class BirdImageReadSerializer(serializers.ModelSerializer):
     author = AuthorReadSerializer(required=False, allow_null=True)
     url = serializers.SerializerMethodField(required=False, allow_null=True)
+    location = LocationSerializer(required=False, allow_null=True)
 
     class Meta:
         model = BirdImage
@@ -1070,14 +1088,6 @@ class BirdSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bird
         exclude = ('similar_species_class_id',)
-        extra_fields = ['main_image']
-
-    def get_field_names(self, declared_fields, info):
-        fields = super(BirdSerializer, self).get_field_names(declared_fields, info)
-        if getattr(self.Meta, 'extra_fields', None):
-            return fields + self.Meta.extra_fields
-        else:
-            return fields
 
     def create(self, validated_data):
         family = validated_data.pop('family', None)
