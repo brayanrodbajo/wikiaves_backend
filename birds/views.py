@@ -12,10 +12,11 @@ from drf_rw_serializers.generics import ListCreateAPIView, RetrieveUpdateDestroy
 from rest_framework.views import APIView
 from django.db.models import Q
 
-from birds.models import Bird, Order, Family, Author, BirdImage, Image, Video, Audio
+from birds.models import Bird, Order, Family, Author, BirdImage, Image, Video, Audio, Location
 from birds.serializers import BirdSerializer, OrderSerializer, FamilySerializer, AuthorSerializer, AuthorIdsSerializer, \
     BirdReadSerializer, FamilyReadSerializer, AuthorMediaSerializer, BirdImageSerializer, ImageSerializer, \
-    VideoSerializer, AudioSerializer, BirdImageReadSerializer, VideoReadSerializer, AudioReadSerializer
+    VideoSerializer, AudioSerializer, BirdImageReadSerializer, VideoReadSerializer, AudioReadSerializer, \
+    LocationSerializer
 from birds.serializers import BirdIdsSerializer, OrderIdsSerializer, FamilyIdsSerializer
 from users.permissions import AdminCustomPermission, EditorCustomPermission
 
@@ -60,6 +61,12 @@ class SingleBird(RetrieveUpdateDestroyAPIView):
         except IntegrityError as e:
             resp = {'detail': str(e)}
             return Response(resp, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class Locations(CreateAPIView):
+    permission_classes =  (AdminCustomPermission, )
+    serializer_class = LocationSerializer
+    queryset = Location.objects.all()
 
 
 class Images(CreateAPIView):

@@ -1,12 +1,12 @@
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers, status
 from rest_framework.relations import PrimaryKeyRelatedField
-from rest_framework.response import Response
+from drf_extra_fields.geo_fields import PointField
 
 from birds.models import Text, Author, Image, ScientificNameOrder, ScientificNameFamily, CommonNameBird, \
     ScientificNameBird, Order, Family, Identification, Type, Measure, Value, Reference, Bird, Video, \
-    BirdImage, Audio, Subspecies, SubspeciesName, Vocalization, Distribution, SimilarSpecies, Feeding, Xenocanto  # , \
-    # Location
+    BirdImage, Audio, Subspecies, SubspeciesName, Vocalization, Distribution, SimilarSpecies, Feeding, Xenocanto, \
+    Location
 
 
 class TextSerializer(serializers.ModelSerializer):
@@ -15,10 +15,12 @@ class TextSerializer(serializers.ModelSerializer):
         fields = ('language', 'text')
 
 
-# class LocationSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Location
-#         fields = ('x', 'y', 'z', 'text')
+class LocationSerializer(serializers.ModelSerializer):
+    point = PointField(required=False)
+
+    class Meta:
+        model = Location
+        fields = '__all__'
 
 
 class ImageSerializer(serializers.ModelSerializer):
@@ -546,6 +548,7 @@ class IdentificationSerializer(serializers.ModelSerializer):
 class BirdImageSerializer(serializers.ModelSerializer):
     author = PrimaryKeyRelatedField(queryset=Author.objects.all(), required=False)
     url = serializers.ImageField(required=False)
+    location = PrimaryKeyRelatedField(queryset=Location.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = BirdImage
@@ -609,6 +612,7 @@ class VideoReadSerializer(serializers.ModelSerializer):
 class VideoSerializer(serializers.ModelSerializer):
     author = PrimaryKeyRelatedField(queryset=Author.objects.all(), required=False)
     url = serializers.FileField(required=False)
+    location = PrimaryKeyRelatedField(queryset=Location.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = Video
@@ -666,6 +670,7 @@ class AudioReadSerializer(serializers.ModelSerializer):
 class AudioSerializer(serializers.ModelSerializer):
     author = PrimaryKeyRelatedField(queryset=Author.objects.all(), required=False)
     url = serializers.FileField(required=False)
+    location = PrimaryKeyRelatedField(queryset=Location.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = Audio
@@ -1183,12 +1188,13 @@ class BirdSerializer(serializers.ModelSerializer):
         bird.scientific_names.set(scientific_names)
         images = []
         for im in images_data:
-            if main_image and main_image.id == im.id:
-                im.main = True
-                im.save()
-            else:
-                im.main = False
-                im.save()
+            if main_image:  # main_image attribute override main attr of each image obj
+                if main_image.id == im.id:
+                    im.main = True
+                    im.save()
+                else:
+                    im.main = False
+                    im.save()
             images.append(im)
         bird.images.set(images)
         videos = []
@@ -1395,16 +1401,17 @@ class BirdSerializer(serializers.ModelSerializer):
                     print(serializer.errors)
             instance.scientific_names.set(scientific_names)
         images_data = validated_data.pop('images', '')
-        main_image = validated_data.pop('main_image', None)  # when there are images, main_image has to be defined
+        main_image = validated_data.pop('main_image', '')
         if images_data != '':
             images = []
             for im in images_data:
-                if main_image and main_image.id == im.id:
-                    im.main = True
-                    im.save()
-                else:
-                    im.main = False
-                    im.save()
+                if main_image != '':  # main_image attribute override main attr of each image obj
+                    if main_image and main_image.id == im.id:
+                        im.main = True
+                        im.save()
+                    else:
+                        im.main = False
+                        im.save()
                 images.append(im)
             instance.images.set(images)
         videos_data = validated_data.pop('videos', '')
