@@ -22,12 +22,17 @@ class TextSerializer(serializers.ModelSerializer):
 
 
 class ImageSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField(required=False, allow_null=True)
+
     class Meta:
         model = Image
         fields = '__all__'
         extra_kwargs = {
             'url': {'validators': []},
         }
+
+    def get_url(self, image):
+        return image.url.url
 
 
 class AuthorReadSerializer(serializers.ModelSerializer):
@@ -573,6 +578,7 @@ class BirdImageSerializer(serializers.ModelSerializer):
 
 class BirdImageReadSerializer(serializers.ModelSerializer):
     author = AuthorReadSerializer(required=False, allow_null=True)
+    url = serializers.SerializerMethodField(required=False, allow_null=True)
 
     class Meta:
         model = BirdImage
@@ -581,9 +587,13 @@ class BirdImageReadSerializer(serializers.ModelSerializer):
             'url': {'validators': []},
         }
 
+    def get_url(self, image):
+        return image.url.url
+
 
 class VideoReadSerializer(serializers.ModelSerializer):
     author = AuthorReadSerializer(required=False)
+    url = serializers.SerializerMethodField(required=False, allow_null=True)
 
     class Meta:
         model = Video
@@ -591,6 +601,9 @@ class VideoReadSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'url': {'validators': []},
         }
+
+    def get_url(self, video):
+        return video.url.url
 
 
 class VideoSerializer(serializers.ModelSerializer):
@@ -637,7 +650,7 @@ class VideoSerializer(serializers.ModelSerializer):
 
 class AudioReadSerializer(serializers.ModelSerializer):
     author = AuthorSerializer(required=False, allow_null=True)
-    url = serializers.FileField(required=False)
+    url = serializers.SerializerMethodField(required=False, allow_null=True)
 
     class Meta:
         model = Audio
@@ -645,6 +658,9 @@ class AudioReadSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'url': {'validators': []},
         }
+
+    def get_url(self, audio):
+        return audio.url.url
 
 
 class AudioSerializer(serializers.ModelSerializer):
