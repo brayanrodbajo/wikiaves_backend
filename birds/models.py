@@ -17,6 +17,11 @@ class Text(models.Model):
     feeding_name = models.ForeignKey('Feeding', null=True, on_delete=models.SET_NULL, related_name='names')
 
 
+class Location(models.Model):
+    point = models.PointField()
+    description = models.CharField(max_length=100, null=True)
+
+
 class Reference(models.Model):
     LITERATURE = 'LITERATURE'
     MAP = 'MAP'
@@ -162,7 +167,7 @@ class SubspeciesName(models.Model):
 
 class BirdImage(Image):
     category = models.CharField(max_length=50, null=True, blank=True)
-    location = models.PointField(null=True, blank=True)
+    location = models.ForeignKey(Location, related_name='images', null=True, on_delete=models.SET_NULL)
     main = models.BooleanField(default=False)
     bird = models.ForeignKey(Bird, related_name='images', null=True, on_delete=models.SET_NULL)
     subspecies = models.ForeignKey(Subspecies, related_name='images', null=True, on_delete=models.SET_NULL)
@@ -182,7 +187,7 @@ class Video(models.Model):
     thumbnail = models.ImageField(null=True, blank=True, upload_to=upload_videos_tn, max_length=500)
     category = models.CharField(max_length=50, null=True, blank=True)
     format = models.CharField(max_length=4, null=True, blank=True)
-    location = models.PointField(null=True, blank=True)
+    location = models.ForeignKey(Location, related_name='videos', null=True, on_delete=models.SET_NULL)
     duration_in_seconds = models.FloatField(null=True, blank=True)
     bird = models.ForeignKey(Bird, related_name='videos', null=True, on_delete=models.SET_NULL)
     author = models.ForeignKey(Author, related_name='videos_authored', null=True, on_delete=models.SET_NULL)
@@ -196,7 +201,7 @@ class Audio(models.Model):
     url = models.FileField(upload_to=upload_audios, max_length=500)
     author = models.ForeignKey(Author, related_name='audios_authored', null=True, on_delete=models.SET_NULL)
     format = models.CharField(max_length=4, null=True, blank=True)
-    location = models.PointField(null=True, blank=True)
+    location = models.ForeignKey(Location, related_name='audios', null=True, on_delete=models.SET_NULL)
     vocalization = models.ForeignKey('Vocalization', related_name='audios', null=True, on_delete=models.SET_NULL)
 
 
