@@ -1043,6 +1043,8 @@ class BirdSerializer(serializers.ModelSerializer):
     common_names = CommonNameBirdSerializer(required=False, allow_null=True, many=True)
     scientific_names = ScientificNameBirdSerializer(required=False, many=True)
     images = PrimaryKeyRelatedField(many=True, queryset=BirdImage.objects.all(), required=False, allow_null=True)
+    main_image = serializers.PrimaryKeyRelatedField(queryset=BirdImage.objects.all(), write_only=True, allow_null=True,
+                                                    required=False)
     videos = PrimaryKeyRelatedField(many=True, queryset=Video.objects.all(), required=False, allow_null=True)
     vocalizations = VocalizationSerializer(many=True, required=False, allow_null=True)
     description = TextSerializer(required=False, allow_null=True)
@@ -1063,10 +1065,14 @@ class BirdSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bird
         exclude = ('similar_species_class_id',)
+        extra_fields = ['main_image']
 
-    def get_fields(self):
-        fields = super(BirdSerializer, self).get_fields()
-        return fields
+    def get_field_names(self, declared_fields, info):
+        fields = super(BirdSerializer, self).get_field_names(declared_fields, info)
+        if getattr(self.Meta, 'extra_fields', None):
+            return fields + self.Meta.extra_fields
+        else:
+            return fields
 
     def create(self, validated_data):
         family = validated_data.pop('family', None)
@@ -1140,6 +1146,7 @@ class BirdSerializer(serializers.ModelSerializer):
         behavior_data = validated_data.pop('behavior', [])
         references_data = validated_data.pop('references', [])
         authors_data = validated_data.pop('authors', [])
+        main_image = validated_data.pop('main_image', None)
         bird = Bird.objects.create(family=family, description=description, identification=identification,
                                    distribution=distribution, migration=migration, habitat=habitat,
                                    feeding=feeding, taxonomy=taxonomy, conservation=conservation,
@@ -1176,6 +1183,12 @@ class BirdSerializer(serializers.ModelSerializer):
         bird.scientific_names.set(scientific_names)
         images = []
         for im in images_data:
+            if main_image and main_image.id == im.id:
+                im.main = True
+                im.save()
+            else:
+                im.main = False
+                im.save()
             images.append(im)
         bird.images.set(images)
         videos = []
@@ -1382,9 +1395,16 @@ class BirdSerializer(serializers.ModelSerializer):
                     print(serializer.errors)
             instance.scientific_names.set(scientific_names)
         images_data = validated_data.pop('images', '')
+        main_image = validated_data.pop('main_image', None)  # when there are images, main_image has to be defined
         if images_data != '':
             images = []
             for im in images_data:
+                if main_image and main_image.id == im.id:
+                    im.main = True
+                    im.save()
+                else:
+                    im.main = False
+                    im.save()
                 images.append(im)
             instance.images.set(images)
         videos_data = validated_data.pop('videos', '')
