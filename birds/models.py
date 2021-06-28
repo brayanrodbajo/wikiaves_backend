@@ -169,6 +169,7 @@ class BirdImage(Image):
     category = models.CharField(max_length=50, null=True, blank=True)
     location = models.ForeignKey(Location, related_name='images', null=True, on_delete=models.SET_NULL)
     main = models.BooleanField(default=False)
+    description = models.ForeignKey(Text, related_name='bird_images', null=True, on_delete=models.SET_NULL)
     bird = models.ForeignKey(Bird, related_name='images', null=True, on_delete=models.SET_NULL)
     subspecies = models.ForeignKey(Subspecies, related_name='images', null=True, on_delete=models.SET_NULL)
     author = models.ForeignKey(Author, related_name='images_authored', null=True, on_delete=models.SET_NULL)

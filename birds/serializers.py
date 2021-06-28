@@ -551,6 +551,7 @@ class BirdImageSerializer(serializers.ModelSerializer):
     author = PrimaryKeyRelatedField(queryset=Author.objects.all(), required=False)
     url = serializers.ImageField(required=False)
     location = serializers.CharField(write_only=True, required=False, allow_null=True)
+    description = serializers.CharField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = BirdImage
@@ -568,7 +569,14 @@ class BirdImageSerializer(serializers.ModelSerializer):
                 location = serializer.save()
             else:
                 print(serializer.errors)
-        image = BirdImage.objects.create(author=author, **validated_data, location=location)
+        description = validated_data.pop('description', None)
+        if description:
+            serializer = TextSerializer(data=json.loads(description))
+            if serializer.is_valid():
+                description = serializer.save()
+            else:
+                print(serializer.errors)
+        image = BirdImage.objects.create(author=author, description=description, **validated_data, location=location)
         return image
 
     def update(self, instance, validated_data):
@@ -588,7 +596,18 @@ class BirdImageSerializer(serializers.ModelSerializer):
                 else:
                     print(serializer.errors)
             else:
-                instance.short_description = None
+                instance.location = None
+        description = validated_data.get('description', "")
+        if description != "":
+            if description:
+                serializer = TextSerializer(instance.description, data=json.loads(description))
+                if serializer.is_valid():
+                    description = serializer.save()
+                    instance.description = description
+                else:
+                    print(serializer.errors)
+            else:
+                instance.description = None
         main = validated_data.get('main', "")
         if main != "":
             instance.main = main
@@ -600,6 +619,7 @@ class BirdImageReadSerializer(serializers.ModelSerializer):
     author = AuthorReadSerializer(required=False, allow_null=True)
     url = serializers.SerializerMethodField(required=False, allow_null=True)
     location = LocationSerializer(required=False, allow_null=True)
+    description = TextSerializer(allow_null=True, required=False)
 
     class Meta:
         model = BirdImage
