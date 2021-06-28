@@ -1433,6 +1433,10 @@ class BirdSerializer(serializers.ModelSerializer):
         images_data = validated_data.pop('images', '')
         main_image = validated_data.pop('main_image', '')
         if images_data != '':
+            if instance.images.all() and len(instance.images.all()) > 0:
+                to_delete = [item for item in instance.images.all() if item not in images_data]
+                for im in to_delete:
+                    im.delete()
             images = []
             for im in images_data:
                 if main_image != '':  # main_image attribute override main attr of each image obj
