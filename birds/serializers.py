@@ -697,7 +697,7 @@ class AudioReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Audio
-        fields = '__all__'
+        exclude = ('vocalization',)
         extra_kwargs = {
             'url': {'validators': []},
         }
@@ -770,7 +770,7 @@ class XenocantoSerializer(serializers.ModelSerializer):
 class VocalizationReadSerializer(serializers.ModelSerializer):
     short_description = TextSerializer(required=False, allow_null=True)
     long_description = TextSerializer(required=False, allow_null=True)
-    audios = AudioSerializer(many=True, required=False, allow_null=True)
+    audios = AudioReadSerializer(many=True, required=False, allow_null=True)
     xenocantos = XenocantoSerializer(many=True, required=False, allow_null=True)
 
     class Meta:
@@ -1572,9 +1572,15 @@ class BirdReadSerializer(serializers.ModelSerializer):
             c_n_es = []
             c_n_en = []
             main_image = None
+            main_song = None
+            main_call = None
             scientific_names = obj.scientific_names.all()
             common_names = obj.common_names.all()
             images = obj.images.all()
+            songs = list(obj.vocalizations.all().filter(category='SONG').first().audios.all()) + \
+                    list(obj.vocalizations.all().filter(category='SONG').first().xenocantos.all())
+            calls = list(obj.vocalizations.all().filter(category='CALL').first().audios.all()) + \
+                    list(obj.vocalizations.all().filter(category='CALL').first().xenocantos.all())
             for s_n in scientific_names:
                 if s_n.main:
                     s_n_reordered.append(s_n.name)
@@ -1596,11 +1602,25 @@ class BirdReadSerializer(serializers.ModelSerializer):
             for image in images:
                 if image.main:
                     main_image = image.url.url
+            for song in songs:
+                if song.main:
+                    if isinstance(song, Xenocanto):
+                        main_song = song.url
+                    elif isinstance(song, Audio):
+                        main_song = song.url.url
+            for call in calls:
+                if call.main:
+                    if isinstance(call, Xenocanto):
+                        main_call = call.url
+                    elif isinstance(call, Audio):
+                        main_call = call.url.url
             featured_data = {
                 "scientific_names": s_n_reordered,
                 "common_names_es": c_n_es,
                 "common_names_en": c_n_en,
-                "main_image": main_image
+                "main_image": main_image,
+                "main_song": main_song,
+                "main_call": main_call
             }
             return featured_data
         except Exception:
