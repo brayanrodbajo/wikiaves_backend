@@ -203,12 +203,14 @@ class Audio(models.Model):
     author = models.ForeignKey(Author, related_name='audios_authored', null=True, on_delete=models.SET_NULL)
     format = models.CharField(max_length=4, null=True, blank=True)
     location = models.ForeignKey(Location, related_name='audios', null=True, on_delete=models.SET_NULL)
+    main = models.BooleanField(default=False)
     vocalization = models.ForeignKey('Vocalization', related_name='audios', null=True, on_delete=models.SET_NULL)
 
 
 class Xenocanto(models.Model):
     XC_id = models.CharField(max_length=40)
     url = models.URLField()
+    main = models.BooleanField(default=False)
     vocalization = models.ForeignKey('Vocalization', related_name='xenocantos', null=True, on_delete=models.SET_NULL)
 
 

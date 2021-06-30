@@ -693,6 +693,7 @@ class VideoSerializer(serializers.ModelSerializer):
 class AudioReadSerializer(serializers.ModelSerializer):
     author = AuthorSerializer(required=False, allow_null=True)
     url = serializers.SerializerMethodField(required=False, allow_null=True)
+    location = LocationSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Audio
@@ -708,7 +709,7 @@ class AudioReadSerializer(serializers.ModelSerializer):
 class AudioSerializer(serializers.ModelSerializer):
     author = PrimaryKeyRelatedField(queryset=Author.objects.all(), required=False)
     url = serializers.FileField(required=False)
-    location = PrimaryKeyRelatedField(queryset=Location.objects.all(), required=False, allow_null=True)
+    location = serializers.CharField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = Audio
@@ -719,7 +720,14 @@ class AudioSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         author = validated_data.pop('author', None)
-        audio = Audio.objects.create(author=author, **validated_data)
+        location = validated_data.pop('location', None)
+        if location:
+            serializer = LocationSerializer(data=json.loads(location))
+            if serializer.is_valid():
+                location = serializer.save()
+            else:
+                print(serializer.errors)
+        audio = Audio.objects.create(author=author, location=location, **validated_data)
         return audio
 
     def update(self, instance, validated_data):
@@ -734,7 +742,18 @@ class AudioSerializer(serializers.ModelSerializer):
             instance.format = format
         location = validated_data.get('location', "")
         if location != "":
-            instance.location = location
+            if location:
+                serializer = LocationSerializer(instance.location, data=json.loads(location))
+                if serializer.is_valid():
+                    location = serializer.save()
+                    instance.location = location
+                else:
+                    print(serializer.errors)
+            else:
+                instance.location = None
+        main = validated_data.get('main', "")
+        if main != "":
+            instance.main = main
         instance.save()
         return instance
 
