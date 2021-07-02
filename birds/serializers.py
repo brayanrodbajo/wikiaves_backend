@@ -1577,10 +1577,15 @@ class BirdReadSerializer(serializers.ModelSerializer):
             scientific_names = obj.scientific_names.all()
             common_names = obj.common_names.all()
             images = obj.images.all()
-            songs = list(obj.vocalizations.all().filter(category='SONG').first().audios.all()) + \
-                    list(obj.vocalizations.all().filter(category='SONG').first().xenocantos.all())
-            calls = list(obj.vocalizations.all().filter(category='CALL').first().audios.all()) + \
-                    list(obj.vocalizations.all().filter(category='CALL').first().xenocantos.all())
+            try:
+                songs = list(obj.vocalizations.all().filter(category='SONG').first().audios.all()) + \
+                        list(obj.vocalizations.all().filter(category='SONG').first().xenocantos.all())
+                calls = list(obj.vocalizations.all().filter(category='CALL').first().audios.all()) + \
+                        list(obj.vocalizations.all().filter(category='CALL').first().xenocantos.all())
+            except Exception as e:
+                print(e)
+                songs = []
+                calls = []
             for s_n in scientific_names:
                 if s_n.main:
                     s_n_reordered.append(s_n.name)
@@ -1623,7 +1628,8 @@ class BirdReadSerializer(serializers.ModelSerializer):
                 "main_call": main_call
             }
             return featured_data
-        except Exception:
+        except Exception as e:
+            print(e)
             return None
 
 
