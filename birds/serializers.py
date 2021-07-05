@@ -1099,6 +1099,12 @@ class SubspeciesSerializer(serializers.ModelSerializer):
         return instance
 
 
+class MainVocalizationSerializer(serializers.Serializer):
+    type = serializers.CharField(write_only=True)
+    XC_id = serializers.CharField(required=False, write_only=True)
+    id = serializers.IntegerField(required=False, write_only=True)
+
+
 class BirdSerializer(serializers.ModelSerializer):
     family = PrimaryKeyRelatedField(queryset=Family.objects.all(), required=False)
     subspecies = SubspeciesSerializer(required=False, allow_null=True, many=True)
@@ -1109,6 +1115,8 @@ class BirdSerializer(serializers.ModelSerializer):
                                                     required=False)
     videos = PrimaryKeyRelatedField(many=True, queryset=Video.objects.all(), required=False, allow_null=True)
     vocalizations = VocalizationSerializer(many=True, required=False, allow_null=True)
+    main_call = MainVocalizationSerializer(write_only=True, required=False, allow_null=True)
+    main_song = MainVocalizationSerializer(write_only=True, required=False, allow_null=True)
     description = TextSerializer(required=False, allow_null=True)
     identification = IdentificationSerializer(required=False, allow_null=True)
     distribution = DistributionSerializer(required=False, allow_null=True)
@@ -1201,6 +1209,8 @@ class BirdSerializer(serializers.ModelSerializer):
         references_data = validated_data.pop('references', [])
         authors_data = validated_data.pop('authors', [])
         main_image = validated_data.pop('main_image', None)
+        main_call = validated_data.pop('main_call', None)
+        main_song = validated_data.pop('main_song', None)
         bird = Bird.objects.create(family=family, description=description, identification=identification,
                                    distribution=distribution, migration=migration, habitat=habitat,
                                    feeding=feeding, taxonomy=taxonomy, conservation=conservation,
@@ -1252,6 +1262,52 @@ class BirdSerializer(serializers.ModelSerializer):
         bird.videos.set(videos)
         vocalizations = []
         for song in vocalizations_data:
+            if main_call and song['category'] == 'CALL':
+                if main_call['type'] == 'audio':       # If main_call is an audio
+                    if 'audios' in song:
+                        for au in song['audios']:
+                            if au.id == main_call['id']:
+                                au.main = True
+                                au.save()
+                            else:
+                                au.main = False
+                                au.save()
+                        for xc in song['xenocantos']:
+                            xc['main'] = False
+                else:           # If main_call is a XC
+                    if 'xenocantos' in song:
+                        for xc in song['xenocantos']:
+                            if xc['XC_id'] == main_call['XC_id']:
+                                xc['main'] = True
+                            else:
+                                xc['main'] = False
+                        for au in song['audios']:
+                            au.main = False
+                            au.save()
+            if main_song and song['category'] == 'SONG':
+                if main_song['type'] == 'audio':       # If main_song is an audio
+                    if 'audios' in song:
+                        for au in song['audios']:
+                            if au.id == main_song['id']:
+                                au.main = True
+                                au.save()
+                            else:
+                                au.main = False
+                                au.save()
+                    if 'xenocantos' in song:
+                        for xc in song['xenocantos']:
+                            xc['main'] = False
+                else:           # If main_song is a XC
+                    if 'xenocantos' in song:
+                        for xc in song['xenocantos']:
+                            if xc['XC_id'] == main_song['XC_id']:
+                                xc['main'] = True
+                            else:
+                                xc['main'] = False
+                    if 'audios' in song:
+                        for au in song['audios']:
+                            au.main = False
+                            au.save()
             if 'audios' in song:
                 song['audios'] = [au.id for au in song['audios']]
             serializer = VocalizationSerializer(data=song)
@@ -1467,6 +1523,14 @@ class BirdSerializer(serializers.ModelSerializer):
                         im.save()
                 images.append(im)
             instance.images.set(images)
+        elif main_image != '' and len(instance.images.all()) > 0:
+            for im in instance.images.all():
+                if main_image and main_image.id == im.id:
+                    im.main = True
+                    im.save()
+                else:
+                    im.main = False
+                    im.save()
         videos_data = validated_data.pop('videos', '')
         if videos_data != '':
             videos = []
@@ -1474,10 +1538,84 @@ class BirdSerializer(serializers.ModelSerializer):
                 videos.append(vi)
             instance.videos.set(videos)
         vocalizations_data = validated_data.pop('vocalizations', '')
+        main_call = validated_data.pop('main_call', '')
+        main_song = validated_data.pop('main_song', '')
         if vocalizations_data != '':
             vocalizations = []
             instance.vocalizations.all().delete()
             for song in vocalizations_data:
+                if main_call != '' and song['category'] == 'CALL':
+                    if main_call:
+                        if main_call['type'] == 'audio':       # If main_call is an audio
+                            if 'audios' in song:
+                                for au in song['audios']:
+                                    if au.id == main_call['id']:
+                                        au.main = True
+                                        au.vocalization = None
+                                        au.save()
+                                    else:
+                                        au.main = False
+                                        au.vocalization = None
+                                        au.save()
+                                for xc in song['xenocantos']:
+                                    xc['main'] = False
+                        else:           # If main_call is a XC
+                            if 'xenocantos' in song:
+                                for xc in song['xenocantos']:
+                                    if xc['XC_id'] == main_call['XC_id']:
+                                        xc['main'] = True
+                                    else:
+                                        xc['main'] = False
+                                for au in song['audios']:
+                                    au.main = False
+                                    au.vocalization = None
+                                    au.save()
+                    else:
+                        if 'audios' in song:
+                            for au in song['audios']:
+                                au.main = False
+                                au.vocalization = None
+                                au.save()
+                        if 'xenocantos' in song:
+                            for xc in song['xenocantos']:
+                                xc['main'] = False
+                if main_song != '' and song['category'] == 'SONG':
+                    if main_song:
+                        if main_song['type'] == 'audio':       # If main_song is an audio
+                            if 'audios' in song:
+                                for au in song['audios']:
+                                    if au.id == main_song['id']:
+                                        au.main = True
+                                        au.vocalization = None
+                                        au.save()
+                                    else:
+                                        au.main = False
+                                        au.vocalization = None
+                                        au.save()
+                            if 'xenocantos' in song:
+                                for xc in song['xenocantos']:
+                                    xc.main = False
+                        else:           # If main_song is a XC
+                            if 'xenocantos' in song:
+                                for xc in song['xenocantos']:
+                                    if xc['XC_id'] == main_song['XC_id']:
+                                        xc['main'] = True
+                                    else:
+                                        xc['main'] = False
+                            if 'audios' in song:
+                                for au in song['audios']:
+                                    au.main = False
+                                    au.vocalization = None
+                                    au.save()
+                    else:
+                        if 'audios' in song:
+                            for au in song['audios']:
+                                au.main = False
+                                au.vocalization = None
+                                au.save()
+                        if 'xenocantos' in song:
+                            for xc in song['xenocantos']:
+                                xc['main'] = False
                 if 'audios' in song:
                     song['audios'] = [au.id for au in song['audios']]
                 serializer = VocalizationSerializer(data=song)
@@ -1487,6 +1625,70 @@ class BirdSerializer(serializers.ModelSerializer):
                 else:
                     print(serializer.errors)
             instance.vocalizations.set(vocalizations)
+        elif len(instance.vocalizations.all()) > 0:
+            if main_call != '':
+                for song in instance.vocalizations.filter(category='CALL'):
+                    if main_call:
+                        if main_call['type'] == 'audio':       # If main_call is an audio
+                            for au in song.audios.all():
+                                if au.id == main_call['id']:
+                                    au.main = True
+                                    au.save()
+                                else:
+                                    au.main = False
+                                    au.save()
+                            for xc in song.xenocantos.all():
+                                xc.main = False
+                                xc.save()
+                        else:           # If main_call is a XC
+                            for xc in song.xenocantos.all():
+                                if xc.XC_id == main_call['XC_id']:
+                                    xc.main = True
+                                    xc.save()
+                                else:
+                                    xc.main = False
+                                    xc.save()
+                            for au in song.audios.all():
+                                au.main = False
+                                au.save()
+                    else:
+                        for au in song.audios.all():
+                            au.main = False
+                            au.save()
+                        for xc in song.xenocantos.all():
+                            xc.main = False
+            if main_song != '':
+                for song in instance.vocalizations.filter(category='SONG'):
+                    if main_song:
+                        if main_song['type'] == 'audio':       # If main_song is an audio
+                            for au in song.audios.all():
+                                if au.id == main_song['id']:
+                                    au.main = True
+                                    au.save()
+                                else:
+                                    au.main = False
+                                    au.save()
+                            for xc in song.xenocantos.all():
+                                xc.main = False
+                                xc.save()
+                        else:           # If main_song is a XC
+                            for xc in song.xenocantos.all():
+                                if xc.XC_id == main_song['XC_id']:
+                                    xc.main = True
+                                    xc.save()
+                                else:
+                                    xc.main = False
+                                    xc.save()
+                            for au in song.audios.all():
+                                au.main = False
+                                au.save()
+                    else:
+                        for au in song.audios.all():
+                            au.main = False
+                            au.save()
+                        for xc in song.xenocantos.all():
+                            xc.main = False
+                            xc.save()
         reproduction_data = validated_data.pop('reproduction', '')
         if reproduction_data != '':
             reproduction = []
@@ -1580,11 +1782,14 @@ class BirdReadSerializer(serializers.ModelSerializer):
             try:
                 songs = list(obj.vocalizations.all().filter(category='SONG').first().audios.all()) + \
                         list(obj.vocalizations.all().filter(category='SONG').first().xenocantos.all())
+            except Exception as e:
+                print(e)
+                songs = []
+            try:
                 calls = list(obj.vocalizations.all().filter(category='CALL').first().audios.all()) + \
                         list(obj.vocalizations.all().filter(category='CALL').first().xenocantos.all())
             except Exception as e:
                 print(e)
-                songs = []
                 calls = []
             for s_n in scientific_names:
                 if s_n.main:
