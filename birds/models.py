@@ -14,7 +14,7 @@ class Text(models.Model):
     )
     language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES)
     text = models.TextField()
-    feeding_name = models.ForeignKey('Feeding', null=True, on_delete=models.SET_NULL, related_name='names')
+    feeding_name = models.ForeignKey('Feeding', null=True, on_delete=models.CASCADE, related_name='names')
 
 
 class Location(models.Model):
@@ -211,7 +211,7 @@ class Xenocanto(models.Model):
     XC_id = models.CharField(max_length=40)
     url = models.URLField()
     main = models.BooleanField(default=False)
-    vocalization = models.ForeignKey('Vocalization', related_name='xenocantos', null=True, on_delete=models.SET_NULL)
+    vocalization = models.ForeignKey('Vocalization', related_name='xenocantos', null=True, on_delete=models.CASCADE)
 
 
 class Vocalization(models.Model):
