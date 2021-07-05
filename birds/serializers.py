@@ -1542,6 +1542,27 @@ class BirdSerializer(serializers.ModelSerializer):
         main_song = validated_data.pop('main_song', '')
         if vocalizations_data != '':
             vocalizations = []
+            # Delete old audio files that are no longer in the bird obj
+            if len(instance.vocalizations.filter(category='SONG')) > 0:
+                instance_songs = [item
+                                  for item in instance.vocalizations.filter(category='SONG').first().audios.all()]
+                new_songs = []
+                for item in vocalizations_data:
+                    if item['category'] == 'SONG':
+                        new_songs = item['audios']
+                to_delete = [item for item in instance_songs if item not in new_songs]
+                for au in to_delete:
+                    au.delete()
+            elif len(instance.vocalizations.filter(category='CALL')) > 0:
+                instance_calls = [item
+                                  for item in instance.vocalizations.filter(category='CALL').first().audios.all()]
+                new_calls = []
+                for item in vocalizations_data:
+                    if item['category'] == 'CALL':
+                        new_calls = item['audios']
+                to_delete = [item for item in instance_calls if item not in new_calls]
+                for au in to_delete:
+                    au.delete()
             instance.vocalizations.all().delete()
             for song in vocalizations_data:
                 if main_call != '' and song['category'] == 'CALL':
@@ -1780,14 +1801,14 @@ class BirdReadSerializer(serializers.ModelSerializer):
             common_names = obj.common_names.all()
             images = obj.images.all()
             try:
-                songs = list(obj.vocalizations.all().filter(category='SONG').first().audios.all()) + \
-                        list(obj.vocalizations.all().filter(category='SONG').first().xenocantos.all())
+                songs = list(obj.vocalizations.filter(category='SONG').first().audios.all()) + \
+                        list(obj.vocalizations.filter(category='SONG').first().xenocantos.all())
             except Exception as e:
                 print(e)
                 songs = []
             try:
-                calls = list(obj.vocalizations.all().filter(category='CALL').first().audios.all()) + \
-                        list(obj.vocalizations.all().filter(category='CALL').first().xenocantos.all())
+                calls = list(obj.vocalizations.filter(category='CALL').first().audios.all()) + \
+                        list(obj.vocalizations.filter(category='CALL').first().xenocantos.all())
             except Exception as e:
                 print(e)
                 calls = []

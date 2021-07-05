@@ -32,7 +32,7 @@ class Birds(ListCreateAPIView):
     filter_backends = (filters.SearchFilter,)
 
     def get_queryset(self):
-        queryset = Bird.objects.all()
+        queryset = Bird.objects.order_by('id')
         family_id = self.request.query_params.get('family', None)
         if family_id:
             queryset = queryset.filter(family=family_id)
