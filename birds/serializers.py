@@ -8,7 +8,9 @@ from drf_extra_fields.geo_fields import PointField
 from birds.models import Text, Author, Image, ScientificNameOrder, ScientificNameFamily, CommonNameBird, \
     ScientificNameBird, Order, Family, Identification, Type, Measure, Value, Reference, Bird, Video, \
     BirdImage, Audio, Subspecies, SubspeciesName, Vocalization, Distribution, SimilarSpecies, Feeding, Xenocanto, \
-    Location
+    Location, EditorBird
+from users.models import CustomUser
+from users.serializers import UserProfileSerializer
 
 
 class TextSerializer(serializers.ModelSerializer):
@@ -1099,6 +1101,36 @@ class SubspeciesSerializer(serializers.ModelSerializer):
         return instance
 
 
+class EditorBirdReadSerializer(serializers.ModelSerializer):
+    editor = UserProfileSerializer(required=False)
+
+    class Meta:
+        model = EditorBird
+        fields = ('editor', 'last_updated')
+
+
+class EditorBirdSerializer(serializers.ModelSerializer):
+    editor = PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), required=False)
+
+    class Meta:
+        model = EditorBird
+        fields = ('editor', 'last_updated')
+
+    def create(self, validated_data):
+        editor = validated_data.pop('editor', None)
+        editor_bird = EditorBird.objects.create(editor=editor, **validated_data)
+        return editor_bird
+
+    def update(self, instance, validated_data):
+        last_updated = validated_data.pop('last_updated', '')
+        if last_updated != '':
+            instance.last_updated = last_updated
+        editor_data = validated_data.pop('editor', '')
+        if editor_data != '':
+            instance.editor.set(editor_data)
+        return instance
+
+
 class MainVocalizationSerializer(serializers.Serializer):
     type = serializers.CharField(write_only=True)
     XC_id = serializers.CharField(required=False, write_only=True)
@@ -1130,7 +1162,8 @@ class BirdSerializer(serializers.ModelSerializer):
     similar_species = SimilarSpeciesSerializer(required=False, allow_null=True)
     references = ReferenceSerializer(required=False, allow_null=True, many=True)
     own_citation = ReferenceSerializer(required=False, allow_null=True)
-    authors = PrimaryKeyRelatedField(many=True, queryset=Author.objects.all(), required=False, allow_null=True)
+    authors = PrimaryKeyRelatedField(many=True, queryset=CustomUser.objects.all(), required=False, allow_null=True)
+    editors = EditorBirdSerializer(many=True, required=False, allow_null=True)
 
     class Meta:
         model = Bird
@@ -1208,6 +1241,7 @@ class BirdSerializer(serializers.ModelSerializer):
         behavior_data = validated_data.pop('behavior', [])
         references_data = validated_data.pop('references', [])
         authors_data = validated_data.pop('authors', [])
+        editors_data = validated_data.pop('editors', [])
         main_image = validated_data.pop('main_image', None)
         main_call = validated_data.pop('main_call', None)
         main_song = validated_data.pop('main_song', None)
@@ -1348,6 +1382,15 @@ class BirdSerializer(serializers.ModelSerializer):
         for au in authors_data:
             authors.append(au)
         bird.authors.set(authors)
+        editors = []
+        for ed in editors_data:
+            serializer = EditorBirdSerializer(data=ed)
+            if serializer.is_valid():
+                obj = serializer.save()
+                editors.append(obj)
+            else:
+                print(serializer.errors)
+        bird.editors.set(editors)
         return bird
 
     def update(self, instance, validated_data):
@@ -1752,6 +1795,17 @@ class BirdSerializer(serializers.ModelSerializer):
             for au in authors_data:
                 authors.append(au)
             instance.authors.set(authors)
+        editors_data = validated_data.pop('editors', '')
+        if editors_data != '':
+            editors = []
+            for ed in editors_data:
+                serializer = EditorBirdSerializer(data=ed)
+                if serializer.is_valid():
+                    obj = serializer.save()
+                    editors.append(obj)
+                else:
+                    print(serializer.errors)
+            instance.editors.set(editors)
 
         draft_data = validated_data.pop('draft', None)
         if draft_data:
@@ -1783,6 +1837,7 @@ class BirdReadSerializer(serializers.ModelSerializer):
     references = ReferenceSerializer(required=False, allow_null=True, many=True)
     own_citation = ReferenceSerializer(required=False, allow_null=True)
     authors = AuthorReadSerializer(many=True, required=False, allow_null=True)
+    editors = EditorBirdReadSerializer(many=True, required=False, allow_null=True)
     featured_data = serializers.SerializerMethodField(required=False, allow_null=True)
 
     class Meta:

@@ -1,8 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 # from django.db import models
 from django.contrib.gis.db import models
-from django.db.models import Q
-from rest_framework.exceptions import ValidationError
+# from django.db.models import Q
+# from rest_framework.exceptions import ValidationError
 
 
 class Text(models.Model):
@@ -134,15 +134,22 @@ class Bird(models.Model):
     similar_species_class_id = models.ForeignKey('SimilarSpecies', related_name='bird_ids', null=True,
                                                  on_delete=models.SET_NULL)
     feeding = models.ForeignKey(Feeding, null=True, on_delete=models.SET_NULL, related_name='birds_feed')
-    authors = models.ManyToManyField(Author, through='AuthorBird', related_name='bird_authors')
+    authors = models.ManyToManyField('users.CustomUser', through='AuthorBird', related_name='bird_authors')
+    # editors = models.ManyToManyField('users.CustomUser', through='EditorBird', related_name='bird_editors')
     draft = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
 
 class AuthorBird(models.Model):
-    author = models.ForeignKey(Author, related_name='authors_bird', null=True, on_delete=models.SET_NULL)
+    author = models.ForeignKey('users.CustomUser', related_name='authors_bird', null=True, on_delete=models.SET_NULL)
     bird = models.ForeignKey(Bird, related_name='authors_bird', null=True, on_delete=models.SET_NULL)
+
+
+class EditorBird(models.Model):
+    editor = models.ForeignKey('users.CustomUser', related_name='editors_bird', null=True, on_delete=models.SET_NULL)
+    bird = models.ForeignKey(Bird, related_name='editors', null=True, on_delete=models.SET_NULL)
+    last_updated = models.DateTimeField()
 
 
 class SimilarSpecies(models.Model):
