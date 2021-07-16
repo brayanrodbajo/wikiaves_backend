@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from birds.models import Bird
-from users.models import CustomUser#, BirdEditor
+from users.models import CustomUser, BirdCurrentEditor
 from users.permissions import AdminCustomPermission
 from users.serializers import UserProfileSerializer, PasswordResetSerializer, SetNewPasswordSerializer
 
@@ -108,36 +108,45 @@ class BirdEditorView(APIView):
     permission_classes = (AdminCustomPermission, )
 
     def post(self, request):
-        id_editor = request.data['editor']
+        id_editors = request.data['editors']
         id_bird = request.data['bird']
         try:
             bird = Bird.objects.get(id=id_bird)
-        except ObjectDoesNotExist:
-            response = {
-                'message': 'User not found',
-                'success': False
-            }
-            return Response(response, status=status.HTTP_404_NOT_FOUND)
-        try:
-            editor = CustomUser.objects.get(id=id_editor)
         except ObjectDoesNotExist:
             response = {
                 'message': 'Bird not found',
                 'success': False
             }
             return Response(response, status=status.HTTP_404_NOT_FOUND)
-        BirdEditor.objects.create(bird=bird, editor=editor)
-        if editor.role != 'E':
+        editors = []
+        if not isinstance(id_editors, list):
             response = {
-                'message': 'The user is not an editor',
+                'message': 'editors is not an array',
                 'success': False
             }
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            response = {
-                'message': 'Assigned',
-                'success': True
-            }
+        for id_editor in id_editors:
+            try:
+                editor = CustomUser.objects.get(id=id_editor)
+            except ObjectDoesNotExist:
+                response = {
+                    'message': 'User not found',
+                    'success': False
+                }
+                return Response(response, status=status.HTTP_404_NOT_FOUND)
+            editors.append(editor)
+            if editor.role != 'E':
+                response = {
+                    'message': 'The user '+str(id_editor)+' is not an editor',
+                    'success': False
+                }
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        for editor in editors:
+            BirdCurrentEditor.objects.create(bird=bird, editor=editor)
+        response = {
+            'message': 'Assigned',
+            'success': True
+        }
         return Response(response, status=status.HTTP_200_OK)
 
 

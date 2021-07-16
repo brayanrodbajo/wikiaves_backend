@@ -1836,8 +1836,9 @@ class BirdReadSerializer(serializers.ModelSerializer):
     similar_species = SimilarSpeciesSerializer(required=False, allow_null=True)
     references = ReferenceSerializer(required=False, allow_null=True, many=True)
     own_citation = ReferenceSerializer(required=False, allow_null=True)
-    authors = AuthorReadSerializer(many=True, required=False, allow_null=True)
+    authors = UserProfileSerializer(many=True, required=False, allow_null=True)
     editors = EditorBirdReadSerializer(many=True, required=False, allow_null=True)
+    current_editors = UserProfileSerializer(many=True, required=False, allow_null=True)
     featured_data = serializers.SerializerMethodField(required=False, allow_null=True)
 
     class Meta:

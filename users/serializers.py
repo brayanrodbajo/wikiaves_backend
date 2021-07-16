@@ -48,7 +48,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     instagram = serializers.URLField(required=False)
     facebook = serializers.URLField(required=False)
     flicker = serializers.URLField(required=False)
-    id = serializers.IntegerField()
+    id = serializers.IntegerField(required=False)
 
     class Meta:
         model = CustomUser
