@@ -95,6 +95,13 @@ class Users(ListAPIView):
     read_serializer_class = UserProfileBirdsReadSerializer
     permission_classes = (AdminCustomPermission,)
 
+    def get_queryset(self):
+        role = self.request.query_params.get('role', None)
+        if role:
+            queryset = self.queryset.filter(role=role)
+            return queryset
+        return self.queryset
+
 
 class SingleUser(RetrieveUpdateDestroyAPIView):
     queryset = CustomUser.objects.all()
