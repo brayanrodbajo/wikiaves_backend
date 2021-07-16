@@ -2,7 +2,10 @@ import pytz
 from datetime import datetime
 
 from django.contrib.auth.models import User
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils.encoding import smart_str, DjangoUnicodeDecodeError
+from django.utils.http import urlsafe_base64_decode
 from rest_framework import generics, viewsets, views, status
 from rest_framework.decorators import api_view
 from rest_framework.generics import ListAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView, UpdateAPIView
@@ -10,9 +13,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from birds.models import Bird
-from users.models import CustomUser, BirdEditor
+from users.models import CustomUser#, BirdEditor
 from users.permissions import AdminCustomPermission
-from users.serializers import UserProfileSerializer
+from users.serializers import UserProfileSerializer, PasswordResetSerializer, SetNewPasswordSerializer
 
 from rest_auth.views import LoginView
 from rest_auth.utils import jwt_encode
@@ -51,6 +54,37 @@ class CustomLoginView(LoginView):
                   "facebook": self.user.facebook, "flicker": self.user.flicker}
         original_response.data.update(mydata)
         return original_response
+
+
+class PasswordResetView(generics.GenericAPIView):
+    serializer_class = PasswordResetSerializer
+    permission_classes = (AdminCustomPermission, )
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        return Response({'success': True, 'url': serializer.validated_data['absurl']}, status=status.HTTP_200_OK)
+
+
+class PasswordTokenCheckView(generics.GenericAPIView):
+    def get(self, request, uidb64, token):
+        try:
+            id = smart_str(urlsafe_base64_decode(uidb64))
+            user = CustomUser.objects.get(id=id)
+            if not PasswordResetTokenGenerator().check_token(user, token):
+                return Response({'success': False, 'msg': 'Token is not valid'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'success': True, 'msg': 'Credentials valid', 'uidb64': uidb64, 'token': token}, status=status.HTTP_200_OK)
+        except DjangoUnicodeDecodeError as e:
+            return Response({'success': False, 'msg': 'Token is not valid: '+str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SetNewPasswordView(generics.GenericAPIView):
+    serializer_class = SetNewPasswordSerializer
+
+    def patch(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response({'success': True, 'msg': 'Password reset success'}, status=status.HTTP_200_OK)
 
 
 class Users(ListAPIView):

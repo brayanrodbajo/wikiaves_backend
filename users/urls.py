@@ -1,6 +1,7 @@
 from django.conf.urls import url
-from django.urls import path, include
+from django.urls import path, include, reverse_lazy
 from allauth.account.views import confirm_email
+from django.contrib.auth import views as auth_views
 
 
 from users import views
@@ -15,6 +16,21 @@ urlpatterns = [
     path('', views.Users.as_view()),
     path('<int:pk>', views.SingleUser.as_view()),
     path('get_token_status', views.get_token_status),
+    path(
+        'password-reset/<uidb64>/<token>/',
+        views.PasswordTokenCheckView.as_view(),
+        name='password-reset-confirm'
+    ),
+    path(
+        'password-reset/',
+        views.PasswordResetView.as_view(),
+        name='reset_password'
+    ),
+    path('password-reset-done/', views.SetNewPasswordView.as_view(),
+         name="password-reset-done"),
+    path('reset_password_complete/', auth_views.PasswordResetCompleteView.as_view(),
+         name="password_reset_complete"),
+
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

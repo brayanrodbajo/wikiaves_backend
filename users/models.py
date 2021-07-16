@@ -6,7 +6,7 @@ from rest_framework.exceptions import AuthenticationFailed
 
 from .authentication import is_token_expired
 
-from birds.models import Bird, Author
+from birds.models import Author
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin, Author):
@@ -17,7 +17,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin, Author):
     username = models.CharField(max_length=150, unique=True)
     email = models.EmailField()
     role = models.CharField(max_length=6, choices=ROLE_CHOICES, default='E')
-    birds = models.ManyToManyField(Bird, through='BirdEditor', related_name='editors')
 
     USERNAME_FIELD = 'username'
     objects = UserManager()
@@ -26,11 +25,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin, Author):
 
     def __str__(self):
         return self.email
-
-
-class BirdEditor(models.Model):
-    bird = models.ForeignKey(Bird, related_name='bird_editor', null=True, on_delete=models.SET_NULL)
-    editor = models.ForeignKey(CustomUser, related_name='editor_bird', null=True, on_delete=models.SET_NULL)
 
 
 class ExpiringTokenAuthentication(TokenAuthentication):

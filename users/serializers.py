@@ -1,6 +1,14 @@
+from django.conf import settings
+from django.contrib.sites.shortcuts import get_current_site
 from django.db import transaction
+from django.urls import reverse
+from django.utils.encoding import smart_bytes, force_str
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from rest_auth.registration.serializers import RegisterSerializer
 from rest_framework import serializers
+from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from rest_framework.exceptions import AuthenticationFailed
 
 from users.models import CustomUser
 
@@ -33,7 +41,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=False)
     last_name = serializers.CharField(required=False)
     role = serializers.CharField(required=False)
-    password = serializers.CharField(required=False)
     username = serializers.CharField(required=False)
     email = serializers.CharField(required=False)
     webpage = serializers.URLField(required=False)
@@ -45,7 +52,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        exclude = ('reference', )
+        exclude = ('reference', 'password')
 
     def update(self, instance, validated_data):
         first_name = validated_data.get('first_name', "")
@@ -74,3 +81,57 @@ class UserProfileSerializer(serializers.ModelSerializer):
             instance.role = role
         instance.save()
         return instance
+
+
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password_reset_form_class = PasswordResetForm
+
+    def validate_email(self, value):
+        self.reset_form = self.password_reset_form_class(data=self.initial_data)
+        if not self.reset_form.is_valid():
+            raise serializers.ValidationError('Error')
+        if not CustomUser.objects.filter(email=value).exists():
+            raise serializers.ValidationError('Invalid e-mail address')
+        return value
+
+    def validate(self, attrs):
+        email = attrs['email']
+        if self.validate_email(email):
+            user = CustomUser.objects.get(email=email)
+            uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
+            token = PasswordResetTokenGenerator().make_token(user)
+            request = self.context['request']
+            current_site = get_current_site(request=request).domain
+            relativeLink = reverse('password-reset-confirm', kwargs={'uidb64': uidb64, 'token': token})
+            absurl = 'http://'+current_site+relativeLink+'?token='+str(token)
+            attrs['absurl'] = absurl
+            return super().validate(attrs)
+
+
+class SetNewPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(
+        min_length=6, max_length=68, write_only=True)
+    token = serializers.CharField(
+        min_length=1, write_only=True)
+    uidb64 = serializers.CharField(
+        min_length=1, write_only=True)
+
+    class Meta:
+        fields = ['password', 'token', 'uidb64']
+
+    def validate(self, attrs):
+        try:
+            password = attrs.get('password')
+            token = attrs.get('token')
+            uidb64 = attrs.get('uidb64')
+            id = force_str(urlsafe_base64_decode(uidb64))
+            user = CustomUser.objects.get(id=id)
+            if not PasswordResetTokenGenerator().check_token(user, token):
+                raise AuthenticationFailed('The reset link is invalid', 401)
+            user.set_password(password)
+            user.save()
+            return (user)
+        except Exception as e:
+            raise AuthenticationFailed('The reset link is invalid', 401)
+
