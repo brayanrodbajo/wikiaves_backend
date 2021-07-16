@@ -11,11 +11,13 @@ from rest_framework.decorators import api_view
 from rest_framework.generics import ListAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView, UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_rw_serializers.generics import RetrieveUpdateDestroyAPIView, ListAPIView
 
 from birds.models import Bird
 from users.models import CustomUser
 from users.permissions import AdminCustomPermission
-from users.serializers import UserProfileSerializer, PasswordResetSerializer, SetNewPasswordSerializer
+from users.serializers import UserProfileSerializer, UserProfileBirdsReadSerializer, UserProfileBirdsSerializer, \
+    PasswordResetSerializer, SetNewPasswordSerializer
 
 from rest_auth.views import LoginView
 from rest_auth.utils import jwt_encode
@@ -89,17 +91,18 @@ class SetNewPasswordView(generics.GenericAPIView):
 
 class Users(ListAPIView):
     queryset = CustomUser.objects.all()
-    serializer_class = UserProfileSerializer
+    write_serializer_class = UserProfileBirdsSerializer
+    read_serializer_class = UserProfileBirdsReadSerializer
     permission_classes = (AdminCustomPermission,)
 
 
 class SingleUser(RetrieveUpdateDestroyAPIView):
     queryset = CustomUser.objects.all()
-    serializer_class = UserProfileSerializer
+    write_serializer_class = UserProfileBirdsSerializer
+    read_serializer_class = UserProfileBirdsReadSerializer
 
     def put(self, request, *args, **kwargs):
         self.queryset = CustomUser.objects.all()
-        self.serializer_class = UserProfileSerializer
         self.permission_classes = (AdminCustomPermission,)
         return super().put(request, *args, **kwargs)
 

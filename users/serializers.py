@@ -135,3 +135,78 @@ class SetNewPasswordSerializer(serializers.Serializer):
         except Exception as e:
             raise AuthenticationFailed('The reset link is invalid', 401)
 
+
+from birds.serializers import BirdSerializer
+from birds.models import Bird
+
+
+class UserProfileBirdsReadSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(required=False)
+    last_name = serializers.CharField(required=False)
+    role = serializers.CharField(required=False)
+    username = serializers.CharField(required=False)
+    email = serializers.CharField(required=False)
+    webpage = serializers.URLField(required=False)
+    twitter = serializers.URLField(required=False)
+    instagram = serializers.URLField(required=False)
+    facebook = serializers.URLField(required=False)
+    flicker = serializers.URLField(required=False)
+    id = serializers.IntegerField(required=False)
+    birds_assigned = BirdSerializer(many=True, required=False, allow_null=True, read_only=True)
+
+    class Meta:
+        model = CustomUser
+        exclude = ('reference', 'password')
+
+
+class UserProfileBirdsSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(required=False)
+    last_name = serializers.CharField(required=False)
+    role = serializers.CharField(required=False)
+    username = serializers.CharField(required=False)
+    email = serializers.CharField(required=False)
+    webpage = serializers.URLField(required=False)
+    twitter = serializers.URLField(required=False)
+    instagram = serializers.URLField(required=False)
+    facebook = serializers.URLField(required=False)
+    flicker = serializers.URLField(required=False)
+    id = serializers.IntegerField(required=False)
+    birds_assigned = serializers.PrimaryKeyRelatedField(queryset=Bird.objects.all(), many=True,
+                                                        required=False, allow_null=True)
+
+    class Meta:
+        model = CustomUser
+        exclude = ('reference', 'password')
+
+    def update(self, instance, validated_data):
+        first_name = validated_data.get('first_name', "")
+        if first_name != "":
+            instance.first_name = first_name
+        last_name = validated_data.get('last_name', "")
+        if last_name != "":
+            instance.last_name = last_name
+        webpage = validated_data.get('webpage', "")
+        if webpage != "":
+            instance.webpage = webpage
+        twitter = validated_data.get('twitter', "")
+        if twitter != "":
+            instance.twitter = twitter
+        instagram = validated_data.get('instagram', "")
+        if instagram != "":
+            instance.instagram = instagram
+        facebook = validated_data.get('facebook', "")
+        if facebook != "":
+            instance.facebook = facebook
+        flicker = validated_data.get('flicker', "")
+        if flicker != "":
+            instance.flicker = flicker
+        role = validated_data.get('role', "")
+        if role != "":
+            instance.role = role
+        birds_assigned = validated_data.get('birds_assigned', "")
+        if birds_assigned != "":
+            for bird in birds_assigned:
+                bird.current_editor = instance
+                bird.save()
+        instance.save()
+        return instance
