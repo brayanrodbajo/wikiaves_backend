@@ -1164,6 +1164,7 @@ class BirdSerializer(serializers.ModelSerializer):
     own_citation = ReferenceSerializer(required=False, allow_null=True)
     authors = PrimaryKeyRelatedField(many=True, queryset=CustomUser.objects.all(), required=False, allow_null=True)
     editors = EditorBirdSerializer(many=True, required=False, allow_null=True)
+    current_editor = PrimaryKeyRelatedField(queryset=CustomUser.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = Bird
@@ -1231,6 +1232,8 @@ class BirdSerializer(serializers.ModelSerializer):
                 own_citation = serializer.save()
             else:
                 print(serializer.errors)
+        current_editor = validated_data.pop('current_editor', None)
+
         subspecies_data = validated_data.pop('subspecies', [])
         common_names_data = validated_data.pop('common_names', [])
         scientific_names_data = validated_data.pop('scientific_names', [])
@@ -1248,7 +1251,8 @@ class BirdSerializer(serializers.ModelSerializer):
         bird = Bird.objects.create(family=family, description=description, identification=identification,
                                    distribution=distribution, migration=migration, habitat=habitat,
                                    feeding=feeding, taxonomy=taxonomy, conservation=conservation,
-                                   similar_species=similar_species, own_citation=own_citation, **validated_data)
+                                   similar_species=similar_species, own_citation=own_citation,
+                                   current_editor=current_editor, **validated_data)
 
         subspecies = []
         for subs in subspecies_data:
@@ -1509,6 +1513,9 @@ class BirdSerializer(serializers.ModelSerializer):
                     print(serializer.errors)
             else:
                 instance.own_citation = None
+        current_editor = validated_data.pop('current_editor', None)
+        if current_editor:
+            instance.current_editor = current_editor
 
         subspecies_data = validated_data.pop('subspecies', '')
         if subspecies_data != '':
@@ -1838,7 +1845,7 @@ class BirdReadSerializer(serializers.ModelSerializer):
     own_citation = ReferenceSerializer(required=False, allow_null=True)
     authors = UserProfileSerializer(many=True, required=False, allow_null=True)
     editors = EditorBirdReadSerializer(many=True, required=False, allow_null=True)
-    current_editors = UserProfileSerializer(many=True, required=False, allow_null=True)
+    current_editor = UserProfileSerializer(required=False, allow_null=True)
     featured_data = serializers.SerializerMethodField(required=False, allow_null=True)
 
     class Meta:

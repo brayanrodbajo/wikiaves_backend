@@ -12,7 +12,7 @@ urlpatterns = [
     url(r'^rest-auth/', include('rest_auth.urls')),
     url(r'^rest-auth/registration/', include('rest_auth.registration.urls')),
     url(r'^account', include('allauth.urls')),
-    url('assign-bird', views.BirdEditorView.as_view()),
+    # url('assign-bird', views.BirdEditorView.as_view()),
     path('', views.Users.as_view()),
     path('<int:pk>', views.SingleUser.as_view()),
     path('get_token_status', views.get_token_status),
@@ -28,9 +28,6 @@ urlpatterns = [
     ),
     path('password-reset-done/', views.SetNewPasswordView.as_view(),
          name="password-reset-done"),
-    path('reset_password_complete/', auth_views.PasswordResetCompleteView.as_view(),
-         name="password_reset_complete"),
-
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

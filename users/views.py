@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from birds.models import Bird
-from users.models import CustomUser, BirdCurrentEditor
+from users.models import CustomUser
 from users.permissions import AdminCustomPermission
 from users.serializers import UserProfileSerializer, PasswordResetSerializer, SetNewPasswordSerializer
 
@@ -104,50 +104,48 @@ class SingleUser(RetrieveUpdateDestroyAPIView):
         return super().put(request, *args, **kwargs)
 
 
-class BirdEditorView(APIView):
-    permission_classes = (AdminCustomPermission, )
-
-    def post(self, request):
-        id_editors = request.data['editors']
-        id_bird = request.data['bird']
-        try:
-            bird = Bird.objects.get(id=id_bird)
-        except ObjectDoesNotExist:
-            response = {
-                'message': 'Bird not found',
-                'success': False
-            }
-            return Response(response, status=status.HTTP_404_NOT_FOUND)
-        editors = []
-        if not isinstance(id_editors, list):
-            response = {
-                'message': 'editors is not an array',
-                'success': False
-            }
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
-        for id_editor in id_editors:
-            try:
-                editor = CustomUser.objects.get(id=id_editor)
-            except ObjectDoesNotExist:
-                response = {
-                    'message': 'User not found',
-                    'success': False
-                }
-                return Response(response, status=status.HTTP_404_NOT_FOUND)
-            editors.append(editor)
-            if editor.role != 'E':
-                response = {
-                    'message': 'The user '+str(id_editor)+' is not an editor',
-                    'success': False
-                }
-                return Response(response, status=status.HTTP_400_BAD_REQUEST)
-        for editor in editors:
-            BirdCurrentEditor.objects.create(bird=bird, editor=editor)
-        response = {
-            'message': 'Assigned',
-            'success': True
-        }
-        return Response(response, status=status.HTTP_200_OK)
+# class BirdEditorView(APIView):
+#     permission_classes = (AdminCustomPermission, )
+#
+#     def post(self, request):
+#         id_editor = request.data['editor']
+#         id_birds = request.data['birds']
+#         try:
+#             editor = CustomUser.objects.get(id=id_editor)
+#             if editor.role != 'E':
+#                 response = {
+#                     'message': 'The user ' + str(id_editor) + ' is not an editor',
+#                     'success': False
+#                 }
+#                 return Response(response, status=status.HTTP_400_BAD_REQUEST)
+#         except ObjectDoesNotExist:
+#             response = {
+#                 'message': 'User not found',
+#                 'success': False
+#             }
+#             return Response(response, status=status.HTTP_404_NOT_FOUND)
+#         if not isinstance(id_birds, list):
+#             response = {
+#                 'message': 'Key birds is not an array',
+#                 'success': False
+#             }
+#             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+#         for id_bird in id_birds:
+#             try:
+#                 bird = Bird.objects.get(id=id_bird)
+#                 bird.current_editor = editor
+#                 bird.save()
+#             except ObjectDoesNotExist:
+#                 response = {
+#                     'message': 'Bird '+str(id_bird)+' not found',
+#                     'success': False
+#                 }
+#                 return Response(response, status=status.HTTP_404_NOT_FOUND)
+#         response = {
+#             'message': 'Assigned',
+#             'success': True
+#         }
+#         return Response(response, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])

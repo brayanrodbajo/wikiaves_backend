@@ -135,6 +135,8 @@ class Bird(models.Model):
                                                  on_delete=models.SET_NULL)
     feeding = models.ForeignKey(Feeding, null=True, on_delete=models.SET_NULL, related_name='birds_feed')
     authors = models.ManyToManyField('users.CustomUser', through='AuthorBird', related_name='bird_authors')
+    current_editor = models.ForeignKey('users.CustomUser', null=True, on_delete=models.SET_NULL,
+                                       related_name='birds_assigned')
     draft = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
