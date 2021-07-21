@@ -1,3 +1,4 @@
+import django_filters
 import pytz
 from datetime import datetime
 
@@ -6,14 +7,12 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.encoding import smart_str, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode
-from rest_framework import generics, viewsets, views, status
+from rest_framework import generics, viewsets, views, status, filters
 from rest_framework.decorators import api_view
 from rest_framework.generics import ListAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView, UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_rw_serializers.generics import RetrieveUpdateDestroyAPIView, ListAPIView
-
-from birds.models import Bird
 from users.models import CustomUser
 from users.permissions import AdminCustomPermission
 from users.serializers import UserProfileSerializer, UserProfileBirdsReadSerializer, UserProfileBirdsSerializer, \
@@ -89,18 +88,18 @@ class SetNewPasswordView(generics.GenericAPIView):
         return Response({'success': True, 'msg': 'Password reset success'}, status=status.HTTP_200_OK)
 
 
+from birds.views import DynamicSearchFilter
+
+
 class Users(ListAPIView):
     queryset = CustomUser.objects.all()
     write_serializer_class = UserProfileBirdsSerializer
     read_serializer_class = UserProfileBirdsReadSerializer
     permission_classes = (AdminCustomPermission,)
-
-    def get_queryset(self):
-        role = self.request.query_params.get('role', None)
-        if role:
-            queryset = self.queryset.filter(role=role)
-            return queryset
-        return self.queryset
+    search_fields = ['role', 'email', 'id']
+    filterset_fields = ['role', 'email', 'id']
+    ordering_fields = '__all__'
+    filter_backends = [DynamicSearchFilter, django_filters.rest_framework.DjangoFilterBackend, filters.OrderingFilter]
 
 
 class SingleUser(RetrieveUpdateDestroyAPIView):
