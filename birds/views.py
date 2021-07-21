@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import IntegrityError
+import django_filters.rest_framework
 from django.views.defaults import bad_request
 from rest_condition import Or
 from rest_framework import generics, viewsets, views, status, filters
@@ -21,18 +22,33 @@ from birds.serializers import BirdIdsSerializer, OrderIdsSerializer, FamilyIdsSe
 from users.permissions import AdminCustomPermission, EditorCustomPermission
 
 
+class DynamicSearchFilter(filters.SearchFilter):
+    def get_search_fields(self, view, request):
+        exact = request.query_params.get('exact', None)
+        search_fields = request.GET.getlist('search_fields', [])
+        default_s_f = super(DynamicSearchFilter, self).get_search_fields(view, request)
+        if len(search_fields) > 0:
+            return search_fields
+        elif exact:
+            return ['='+s_f for s_f in default_s_f]
+        return default_s_f
+
+
 class Birds(ListCreateAPIView):
     queryset = Bird.objects.all()
     write_serializer_class = BirdSerializer
     read_serializer_class = BirdReadSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (AdminCustomPermission, )
+    permission_classes = (AdminCustomPermission,)
+    filter_backends = [DynamicSearchFilter, django_filters.rest_framework.DjangoFilterBackend, filters.OrderingFilter]
     search_fields = ['scientific_names__name', 'common_names__name__text',
                      'family__scientific_names__name', 'family__order__scientific_names__name']
-    filter_backends = (filters.SearchFilter,)
+    filterset_fields = ['id', 'draft', 'scientific_names__name', 'common_names__name__text',
+                        'family__scientific_names__name', 'family__order__scientific_names__name']
+    ordering_fields = '__all__'
 
     def get_queryset(self):
-        queryset = Bird.objects.order_by('id')
+        queryset = Bird.objects.all()
         family_id = self.request.query_params.get('family', None)
         if family_id:
             queryset = queryset.filter(family=family_id)
@@ -53,7 +69,7 @@ class SingleBird(RetrieveUpdateDestroyAPIView):
     queryset = Bird.objects.all()
     write_serializer_class = BirdSerializer
     read_serializer_class = BirdReadSerializer
-    permission_classes = (Or(AdminCustomPermission, EditorCustomPermission), )
+    permission_classes = (Or(AdminCustomPermission, EditorCustomPermission),)
 
     def update(self, request, *args, **kwargs):
         try:
@@ -122,9 +138,11 @@ class Orders(ListCreateAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (AdminCustomPermission, )
+    permission_classes = (AdminCustomPermission,)
     search_fields = ['scientific_names__name']
-    filter_backends = (filters.SearchFilter,)
+    filterset_fields = ['scientific_names__name']
+    ordering_fields = '__all__'
+    filter_backends = [DynamicSearchFilter, django_filters.rest_framework.DjangoFilterBackend, filters.OrderingFilter]
 
     def get_queryset(self):
         id_only = self.request.query_params.get('id_only', None)
@@ -136,7 +154,7 @@ class Orders(ListCreateAPIView):
 class SingleOrder(RetrieveUpdateDestroyAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    permission_classes = (AdminCustomPermission, )
+    permission_classes = (AdminCustomPermission,)
 
 
 class Families(ListCreateAPIView):
@@ -144,9 +162,11 @@ class Families(ListCreateAPIView):
     write_serializer_class = FamilySerializer
     read_serializer_class = FamilyReadSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (AdminCustomPermission, )
+    permission_classes = (AdminCustomPermission,)
     search_fields = ['scientific_names__name']
-    filter_backends = (filters.SearchFilter,)
+    filterset_fields = ['scientific_names__name']
+    ordering_fields = '__all__'
+    filter_backends = [DynamicSearchFilter, django_filters.rest_framework.DjangoFilterBackend, filters.OrderingFilter]
 
     def get_queryset(self):
         queryset = Family.objects.all()
@@ -163,7 +183,7 @@ class SingleFamily(RetrieveUpdateDestroyAPIView):
     queryset = Family.objects.all()
     write_serializer_class = FamilySerializer
     read_serializer_class = FamilyReadSerializer
-    permission_classes = (AdminCustomPermission, )
+    permission_classes = (AdminCustomPermission,)
 
 
 @api_view(['GET'])
@@ -174,7 +194,7 @@ def get_names(request):
             names = list(Bird.objects.order_by().values_list('feeding__names__text', flat=True).distinct())
         else:
             try:
-                names = list(Bird.objects.order_by().values_list(model+'__name__text', flat=True).distinct())
+                names = list(Bird.objects.order_by().values_list(model + '__name__text', flat=True).distinct())
             except Exception as e:
                 resp = {
                     "message": str(e)
@@ -198,7 +218,7 @@ class Authors(ListCreateAPIView):
     read_serializer_class = AuthorMediaSerializer
     write_serializer_class = AuthorSerializer
     pagination_class = LimitOffsetPagination
-    permission_classes = (AdminCustomPermission, )
+    permission_classes = (AdminCustomPermission,)
     search_fields = ['first_name', 'last_name']
     filter_backends = (filters.SearchFilter,)
 
@@ -223,4 +243,4 @@ class SingleAuthor(RetrieveUpdateDestroyAPIView):
     queryset = Author.objects.all()
     read_serializer_class = AuthorMediaSerializer
     write_serializer_class = AuthorSerializer
-    permission_classes = (AdminCustomPermission, )
+    permission_classes = (AdminCustomPermission,)
