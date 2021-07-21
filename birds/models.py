@@ -58,6 +58,7 @@ class Reference(models.Model):
 class Author(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
     reference = models.ForeignKey(Reference, related_name='authors', null=True, on_delete=models.SET_NULL)
     image = models.ForeignKey('Image', related_name='author_image', null=True, on_delete=models.SET_NULL)
     webpage = models.URLField(null=True, blank=True)

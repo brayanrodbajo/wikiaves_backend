@@ -15,7 +15,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin, Author):
         ('A', 'Admin')
     ]
     username = models.CharField(max_length=150, unique=True)
-    email = models.EmailField()
+    # email = models.EmailField()
     role = models.CharField(max_length=6, choices=ROLE_CHOICES, default='E')
 
     USERNAME_FIELD = 'username'
@@ -25,6 +25,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin, Author):
 
     def __str__(self):
         return self.email
+
 
 
 class ExpiringTokenAuthentication(TokenAuthentication):
