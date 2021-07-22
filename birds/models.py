@@ -81,8 +81,8 @@ class PersonBase(models.Model):
         abstract = True
 
 
-class AuthorBase(PersonBase):
-    email = models.EmailField(null=True, blank=True)
+class MultimediaAuthor(PersonBase):
+    email = models.EmailField()
     image = models.ForeignKey(Image, null=True, on_delete=models.SET_NULL)
     webpage = models.URLField(null=True, blank=True)
     description = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL)
@@ -91,18 +91,9 @@ class AuthorBase(PersonBase):
     facebook = models.URLField(null=True, blank=True)
     flicker = models.URLField(null=True, blank=True)
 
-    class Meta:
-        abstract = True
-
 
 class ReferenceAuthor(PersonBase):
     reference = models.ForeignKey(Reference, related_name='authors', null=True, on_delete=models.SET_NULL)
-
-
-class MultimediaAuthor(AuthorBase):
-
-    def __str__(self):
-        return self.email
 
 
 class Order(models.Model):

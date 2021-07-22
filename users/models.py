@@ -6,16 +6,15 @@ from rest_framework.exceptions import AuthenticationFailed
 
 from .authentication import is_token_expired
 
-from birds.models import Bird, AuthorBase
+from birds.models import Bird, MultimediaAuthor
 
 
-class CustomUser(AuthorBase, AbstractBaseUser, PermissionsMixin):
+class CustomUser(MultimediaAuthor, AbstractBaseUser, PermissionsMixin):
     ROLE_CHOICES = [
         ('E', 'Editor'),
         ('A', 'Admin')
     ]
     username = models.CharField(max_length=150, unique=True)
-    email = models.EmailField()
     role = models.CharField(max_length=6, choices=ROLE_CHOICES, default='E')
 
     USERNAME_FIELD = 'username'

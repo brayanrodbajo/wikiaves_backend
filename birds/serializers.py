@@ -1978,7 +1978,7 @@ class AuthorMediaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MultimediaAuthor
-        exclude = ('reference',)
+        fields = '__all__'
 
 
 class BirdIdsSerializer(serializers.ModelSerializer):
