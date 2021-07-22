@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 # from django.db import models
 from django.contrib.gis.db import models
+
+
 # from django.db.models import Q
 # from rest_framework.exceptions import ValidationError
 
@@ -55,18 +57,52 @@ class Reference(models.Model):
     date_accessed = models.DateTimeField(null=True, blank=True)
 
 
-class Author(models.Model):
+def upload_images(instance, filename):
+    return 'images/{filename}'.format(filename=filename)
+
+
+def upload_images_tn(instance, filename):
+    return 'images/thumbnails/{filename}'.format(filename=filename)
+
+
+class Image(models.Model):
+    url = models.ImageField(upload_to=upload_images, max_length=500)
+    thumbnail = models.ImageField(null=True, blank=True, upload_to=upload_images_tn, max_length=500)
+    format = models.CharField(max_length=4, null=True, blank=True)
+    height = models.FloatField(null=True, blank=True)
+    width = models.FloatField(null=True, blank=True)
+
+
+class PersonBase(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100, null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+
+class AuthorBase(PersonBase):
     email = models.EmailField(null=True, blank=True)
-    reference = models.ForeignKey(Reference, related_name='authors', null=True, on_delete=models.SET_NULL)
-    image = models.ForeignKey('Image', related_name='author_image', null=True, on_delete=models.SET_NULL)
+    image = models.ForeignKey(Image, null=True, on_delete=models.SET_NULL)
     webpage = models.URLField(null=True, blank=True)
-    description = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='author_description')
+    description = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL)
     twitter = models.URLField(null=True, blank=True)
     instagram = models.URLField(null=True, blank=True)
     facebook = models.URLField(null=True, blank=True)
     flicker = models.URLField(null=True, blank=True)
+
+    class Meta:
+        abstract = True
+
+
+class ReferenceAuthor(PersonBase):
+    reference = models.ForeignKey(Reference, related_name='authors', null=True, on_delete=models.SET_NULL)
+
+
+class MultimediaAuthor(AuthorBase):
+
+    def __str__(self):
+        return self.email
 
 
 class Order(models.Model):
@@ -93,22 +129,6 @@ class Type(models.Model):
     text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='type_text')
     reproduction = models.ForeignKey('Bird', null=True, on_delete=models.SET_NULL, related_name='reproduction')
     bird_behavior = models.ForeignKey('Bird', null=True, on_delete=models.SET_NULL, related_name='behavior')
-
-
-def upload_images(instance, filename):
-    return 'images/{filename}'.format(filename=filename)
-
-
-def upload_images_tn(instance, filename):
-    return 'images/thumbnails/{filename}'.format(filename=filename)
-
-
-class Image(models.Model):
-    url = models.ImageField(upload_to=upload_images, max_length=500)
-    thumbnail = models.ImageField(null=True, blank=True, upload_to=upload_images_tn, max_length=500)
-    format = models.CharField(max_length=4, null=True, blank=True)
-    height = models.FloatField(null=True, blank=True)
-    width = models.FloatField(null=True, blank=True)
 
 
 class Distribution(models.Model):
@@ -181,7 +201,7 @@ class BirdImage(Image):
     description = models.ForeignKey(Text, related_name='bird_images', null=True, on_delete=models.SET_NULL)
     bird = models.ForeignKey(Bird, related_name='images', null=True, on_delete=models.SET_NULL)
     subspecies = models.ForeignKey(Subspecies, related_name='images', null=True, on_delete=models.SET_NULL)
-    author = models.ForeignKey(Author, related_name='images_authored', null=True, on_delete=models.SET_NULL)
+    author = models.ForeignKey(MultimediaAuthor, related_name='images_authored', null=True, on_delete=models.SET_NULL)
 
 
 def upload_videos(instance, filename):
@@ -200,7 +220,7 @@ class Video(models.Model):
     location = models.ForeignKey(Location, related_name='videos', null=True, on_delete=models.SET_NULL)
     duration_in_seconds = models.FloatField(null=True, blank=True)
     bird = models.ForeignKey(Bird, related_name='videos', null=True, on_delete=models.SET_NULL)
-    author = models.ForeignKey(Author, related_name='videos_authored', null=True, on_delete=models.SET_NULL)
+    author = models.ForeignKey(MultimediaAuthor, related_name='videos_authored', null=True, on_delete=models.SET_NULL)
 
 
 def upload_audios(instance, filename):
@@ -209,7 +229,7 @@ def upload_audios(instance, filename):
 
 class Audio(models.Model):
     url = models.FileField(upload_to=upload_audios, max_length=500)
-    author = models.ForeignKey(Author, related_name='audios_authored', null=True, on_delete=models.SET_NULL)
+    author = models.ForeignKey(MultimediaAuthor, related_name='audios_authored', null=True, on_delete=models.SET_NULL)
     format = models.CharField(max_length=4, null=True, blank=True)
     location = models.ForeignKey(Location, related_name='audios', null=True, on_delete=models.SET_NULL)
     main = models.BooleanField(default=False)

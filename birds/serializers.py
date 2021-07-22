@@ -5,10 +5,10 @@ from rest_framework import serializers, status
 from rest_framework.relations import PrimaryKeyRelatedField
 from drf_extra_fields.geo_fields import PointField
 
-from birds.models import Text, Author, Image, ScientificNameOrder, ScientificNameFamily, CommonNameBird, \
+from birds.models import Text, Image, ScientificNameOrder, ScientificNameFamily, CommonNameBird, \
     ScientificNameBird, Order, Family, Identification, Type, Measure, Value, Reference, Bird, Video, \
     BirdImage, Audio, Subspecies, SubspeciesName, Vocalization, Distribution, SimilarSpecies, Feeding, Xenocanto, \
-    Location, EditorBird
+    Location, EditorBird, MultimediaAuthor, ReferenceAuthor
 from users.models import CustomUser
 from users.serializers import UserProfileSerializer
 
@@ -41,13 +41,20 @@ class ImageSerializer(serializers.ModelSerializer):
         return image.url.url
 
 
+class ReferenceAuthorSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ReferenceAuthor
+        exclude = ('reference',)
+
+
 class AuthorReadSerializer(serializers.ModelSerializer):
     image = ImageSerializer(required=False, allow_null=True)
     description = TextSerializer(required=False, allow_null=True)
 
     class Meta:
-        model = Author
-        exclude = ('reference',)
+        model = MultimediaAuthor
+        fields = '__all__'
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -56,8 +63,8 @@ class AuthorSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=False)
 
     class Meta:
-        model = Author
-        exclude = ('reference',)
+        model = MultimediaAuthor
+        fields = '__all__'
 
     def create(self, validated_data):
         image = validated_data.pop('image', None)
@@ -68,7 +75,7 @@ class AuthorSerializer(serializers.ModelSerializer):
                 description = serializer.save()
             else:
                 print(serializer.errors)
-        author = Author.objects.create(image=image, description=description, **validated_data)
+        author = MultimediaAuthor.objects.create(image=image, description=description, **validated_data)
         return author
 
     def update(self, instance, validated_data):
@@ -356,7 +363,7 @@ class ValueSerializer(serializers.ModelSerializer):
 
 
 class ReferenceSerializer(serializers.ModelSerializer):
-    authors = AuthorSerializer(many=True, required=False, allow_null=True)
+    authors = ReferenceAuthorSerializer(many=True, required=False, allow_null=True)
 
     class Meta:
         model = Reference
@@ -367,7 +374,7 @@ class ReferenceSerializer(serializers.ModelSerializer):
         reference = Reference.objects.create(**validated_data)
         authors = []
         for author in authors_data:
-            serializer = AuthorSerializer(data=author)
+            serializer = ReferenceAuthorSerializer(data=author)
             if serializer.is_valid():
                 au = serializer.save()
                 authors.append(au)
@@ -382,7 +389,7 @@ class ReferenceSerializer(serializers.ModelSerializer):
             authors = []
             instance.authors.all().delete()
             for author in authors_data:
-                serializer = AuthorSerializer(data=author)
+                serializer = ReferenceAuthorSerializer(data=author)
                 if serializer.is_valid():
                     au = serializer.save()
                     authors.append(au)
@@ -550,7 +557,7 @@ class IdentificationSerializer(serializers.ModelSerializer):
 
 
 class BirdImageSerializer(serializers.ModelSerializer):
-    author = PrimaryKeyRelatedField(queryset=Author.objects.all(), required=False)
+    author = PrimaryKeyRelatedField(queryset=MultimediaAuthor.objects.all(), required=False)
     url = serializers.ImageField(required=False)
     location = serializers.CharField(write_only=True, required=False, allow_null=True)
     description = serializers.CharField(write_only=True, required=False, allow_null=True)
@@ -650,7 +657,7 @@ class VideoReadSerializer(serializers.ModelSerializer):
 
 
 class VideoSerializer(serializers.ModelSerializer):
-    author = PrimaryKeyRelatedField(queryset=Author.objects.all(), required=False)
+    author = PrimaryKeyRelatedField(queryset=MultimediaAuthor.objects.all(), required=False)
     url = serializers.FileField(required=False)
     location = PrimaryKeyRelatedField(queryset=Location.objects.all(), required=False, allow_null=True)
 
@@ -709,7 +716,7 @@ class AudioReadSerializer(serializers.ModelSerializer):
 
 
 class AudioSerializer(serializers.ModelSerializer):
-    author = PrimaryKeyRelatedField(queryset=Author.objects.all(), required=False)
+    author = PrimaryKeyRelatedField(queryset=MultimediaAuthor.objects.all(), required=False)
     url = serializers.FileField(required=False)
     location = serializers.CharField(write_only=True, required=False, allow_null=True)
 
@@ -1970,7 +1977,7 @@ class AuthorMediaSerializer(serializers.ModelSerializer):
     audios_authored = AudioAuthorSerializer(read_only=True, many=True, required=False)
 
     class Meta:
-        model = Author
+        model = MultimediaAuthor
         exclude = ('reference',)
 
 
@@ -1994,5 +2001,5 @@ class OrderIdsSerializer(serializers.ModelSerializer):
 
 class AuthorIdsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Author
+        model = MultimediaAuthor
         fields = ('id',)

@@ -52,7 +52,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        exclude = ('reference', 'password')
+        exclude = ('password',)
 
     def update(self, instance, validated_data):
         first_name = validated_data.get('first_name', "")
@@ -156,7 +156,7 @@ class UserProfileBirdsReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        exclude = ('reference', 'password')
+        exclude = ('password',)
 
 
 class UserProfileBirdsSerializer(serializers.ModelSerializer):
@@ -176,7 +176,7 @@ class UserProfileBirdsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        exclude = ('reference', 'password')
+        exclude = ('password',)
 
     def update(self, instance, validated_data):
         first_name = validated_data.get('first_name', "")

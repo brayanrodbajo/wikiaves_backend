@@ -13,11 +13,11 @@ from drf_rw_serializers.generics import ListCreateAPIView, RetrieveUpdateDestroy
 from rest_framework.views import APIView
 from django.db.models import Q
 
-from birds.models import Bird, Order, Family, Author, BirdImage, Image, Video, Audio, Location
-from birds.serializers import BirdSerializer, OrderSerializer, FamilySerializer, AuthorSerializer, AuthorIdsSerializer, \
-    BirdReadSerializer, FamilyReadSerializer, AuthorMediaSerializer, BirdImageSerializer, ImageSerializer, \
+from birds.models import Bird, Order, Family, BirdImage, Image, Video, Audio, Location, MultimediaAuthor
+from birds.serializers import BirdSerializer, OrderSerializer, FamilySerializer, \
+    BirdReadSerializer, FamilyReadSerializer, BirdImageSerializer, ImageSerializer, \
     VideoSerializer, AudioSerializer, BirdImageReadSerializer, VideoReadSerializer, AudioReadSerializer, \
-    LocationSerializer
+    AuthorSerializer, AuthorIdsSerializer, AuthorMediaSerializer
 from birds.serializers import BirdIdsSerializer, OrderIdsSerializer, FamilyIdsSerializer
 from users.permissions import AdminCustomPermission, EditorCustomPermission
 
@@ -214,7 +214,7 @@ def get_names(request):
 
 
 class Authors(ListCreateAPIView):
-    queryset = Author.objects.all()
+    queryset = MultimediaAuthor.objects.all()
     read_serializer_class = AuthorMediaSerializer
     write_serializer_class = AuthorSerializer
     pagination_class = LimitOffsetPagination
@@ -223,16 +223,16 @@ class Authors(ListCreateAPIView):
     filter_backends = (filters.SearchFilter,)
 
     def get_queryset(self):
-        queryset = Author.objects.filter(
+        queryset = MultimediaAuthor.objects.filter(
             Q(images_authored__isnull=False) | Q(videos_authored__isnull=False) | Q(audios_authored__isnull=False)
         ).distinct()
         media_type = self.request.query_params.get('media_type', None)
         if media_type == 'images':
-            queryset = Author.objects.filter(images_authored__isnull=False).distinct()
+            queryset = self.queryset.filter(images_authored__isnull=False).distinct()
         elif media_type == 'videos':
-            queryset = Author.objects.filter(videos_authored__isnull=False).distinct()
+            queryset = self.queryset.filter(videos_authored__isnull=False).distinct()
         elif media_type == 'audios':
-            queryset = Author.objects.filter(audios_authored__isnull=False).distinct()
+            queryset = self.queryset.filter(audios_authored__isnull=False).distinct()
         id_only = self.request.query_params.get('id_only', None)
         if id_only:
             self.read_serializer_class = AuthorIdsSerializer
@@ -240,7 +240,7 @@ class Authors(ListCreateAPIView):
 
 
 class SingleAuthor(RetrieveUpdateDestroyAPIView):
-    queryset = Author.objects.all()
+    queryset = MultimediaAuthor.objects.all()
     read_serializer_class = AuthorMediaSerializer
     write_serializer_class = AuthorSerializer
     permission_classes = (AdminCustomPermission,)
