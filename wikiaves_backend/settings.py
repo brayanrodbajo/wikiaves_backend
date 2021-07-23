@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'rest_auth.registration',
+    'django_filters',
 
     'django_cleanup.apps.CleanupConfig',
 ]
