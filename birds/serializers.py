@@ -1886,13 +1886,19 @@ class BirdReadSerializer(serializers.ModelSerializer):
                     c_n_en.append(c_n.name.text)
             for image in images:
                 if image.main:
-                    main_image = image.url
+                    main_image = self.context['request'].build_absolute_uri(image.url.url)
             for song in songs:
                 if song.main:
-                    main_song = song.url
+                    if isinstance(song, Xenocanto):
+                        main_song = song.url
+                    elif isinstance(song, Audio):
+                        main_song = self.context['request'].build_absolute_uri(song.url.url)
             for call in calls:
                 if call.main:
-                    main_call = call.url
+                    if isinstance(call, Xenocanto):
+                        main_call = call.url
+                    elif isinstance(call, Audio):
+                        main_call = self.context['request'].build_absolute_uri(call.url.url)
             featured_data = {
                 "scientific_names": s_n_reordered,
                 "common_names_es": c_n_es,
