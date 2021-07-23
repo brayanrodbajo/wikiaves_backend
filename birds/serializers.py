@@ -28,7 +28,6 @@ class LocationSerializer(serializers.ModelSerializer):
 
 
 class ImageSerializer(serializers.ModelSerializer):
-    url = serializers.SerializerMethodField(required=False, allow_null=True)
 
     class Meta:
         model = Image
@@ -36,9 +35,6 @@ class ImageSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'url': {'validators': []},
         }
-
-    def get_url(self, image):
-        return image.url.url
 
 
 class ReferenceAuthorSerializer(serializers.ModelSerializer):
@@ -626,7 +622,6 @@ class BirdImageSerializer(serializers.ModelSerializer):
 
 class BirdImageReadSerializer(serializers.ModelSerializer):
     author = AuthorReadSerializer(required=False, allow_null=True)
-    url = serializers.SerializerMethodField(required=False, allow_null=True)
     location = LocationSerializer(required=False, allow_null=True)
     description = TextSerializer(allow_null=True, required=False)
 
@@ -637,13 +632,9 @@ class BirdImageReadSerializer(serializers.ModelSerializer):
             'url': {'validators': []},
         }
 
-    def get_url(self, image):
-        return image.url.url
-
 
 class VideoReadSerializer(serializers.ModelSerializer):
     author = AuthorReadSerializer(required=False)
-    url = serializers.SerializerMethodField(required=False, allow_null=True)
 
     class Meta:
         model = Video
@@ -651,9 +642,6 @@ class VideoReadSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'url': {'validators': []},
         }
-
-    def get_url(self, video):
-        return video.url.url
 
 
 class VideoSerializer(serializers.ModelSerializer):
@@ -701,7 +689,6 @@ class VideoSerializer(serializers.ModelSerializer):
 
 class AudioReadSerializer(serializers.ModelSerializer):
     author = AuthorSerializer(required=False, allow_null=True)
-    url = serializers.SerializerMethodField(required=False, allow_null=True)
     location = LocationSerializer(required=False, allow_null=True)
 
     class Meta:
@@ -710,9 +697,6 @@ class AudioReadSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'url': {'validators': []},
         }
-
-    def get_url(self, audio):
-        return audio.url.url
 
 
 class AudioSerializer(serializers.ModelSerializer):
@@ -1902,19 +1886,13 @@ class BirdReadSerializer(serializers.ModelSerializer):
                     c_n_en.append(c_n.name.text)
             for image in images:
                 if image.main:
-                    main_image = image.url.url
+                    main_image = image.url
             for song in songs:
                 if song.main:
-                    if isinstance(song, Xenocanto):
-                        main_song = song.url
-                    elif isinstance(song, Audio):
-                        main_song = song.url.url
+                    main_song = song.url
             for call in calls:
                 if call.main:
-                    if isinstance(call, Xenocanto):
-                        main_call = call.url
-                    elif isinstance(call, Audio):
-                        main_call = call.url.url
+                    main_call = call.url
             featured_data = {
                 "scientific_names": s_n_reordered,
                 "common_names_es": c_n_es,
