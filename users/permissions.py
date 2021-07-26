@@ -15,7 +15,7 @@ class AdminCustomPermission(IsAuthenticatedOrReadOnly):
 
 class EditorCustomPermission(IsAuthenticatedOrReadOnly):
     def has_permission(self, request, view):
-        birds = CustomUser.objects.get(id=request.user.id).birds.all()
+        birds = CustomUser.objects.get(id=request.user.id).birds_assigned.all()
         return bool(
             request.method in SAFE_METHODS or
             request.user and
