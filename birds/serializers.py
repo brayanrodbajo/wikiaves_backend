@@ -1226,7 +1226,6 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         current_editor = validated_data.pop('current_editor', None)
-        draft = validated_data.pop('draft', None)
 
         subspecies_data = validated_data.pop('subspecies', [])
         common_names_data = validated_data.pop('common_names', [])
@@ -1246,7 +1245,7 @@ class BirdSerializer(serializers.ModelSerializer):
                                    distribution=distribution, migration=migration, habitat=habitat,
                                    feeding=feeding, taxonomy=taxonomy, conservation=conservation,
                                    similar_species=similar_species, own_citation=own_citation,
-                                   current_editor=current_editor, draft=draft, **validated_data)
+                                   current_editor=current_editor, **validated_data)
 
         subspecies = []
         for subs in subspecies_data:
