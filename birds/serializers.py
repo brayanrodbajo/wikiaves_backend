@@ -153,7 +153,9 @@ class CommonNameBirdSerializer(serializers.ModelSerializer):
                 instance.name = name
             else:
                 print(serializer.errors)
-        instance.main = validated_data.get('main', None)
+        main_data = validated_data.get('main', None)
+        if main_data is not None:
+            instance.main = main_data
         instance.save()
         return instance
 
@@ -1224,6 +1226,7 @@ class BirdSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         current_editor = validated_data.pop('current_editor', None)
+        draft = validated_data.pop('draft', None)
 
         subspecies_data = validated_data.pop('subspecies', [])
         common_names_data = validated_data.pop('common_names', [])
@@ -1243,7 +1246,7 @@ class BirdSerializer(serializers.ModelSerializer):
                                    distribution=distribution, migration=migration, habitat=habitat,
                                    feeding=feeding, taxonomy=taxonomy, conservation=conservation,
                                    similar_species=similar_species, own_citation=own_citation,
-                                   current_editor=current_editor, **validated_data)
+                                   current_editor=current_editor, draft=draft, **validated_data)
 
         subspecies = []
         for subs in subspecies_data:
@@ -1806,7 +1809,7 @@ class BirdSerializer(serializers.ModelSerializer):
             instance.editors.set(editors)
 
         draft_data = validated_data.pop('draft', None)
-        if draft_data:
+        if draft_data is not None:
             instance.draft = draft_data
 
         instance.save()
