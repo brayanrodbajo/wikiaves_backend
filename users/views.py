@@ -96,8 +96,8 @@ class Users(ListAPIView):
     write_serializer_class = UserProfileBirdsSerializer
     read_serializer_class = UserProfileBirdsReadSerializer
     permission_classes = (AdminCustomPermission,)
-    search_fields = ['role', 'email', 'id']
-    filterset_fields = ['role', 'email', 'id']
+    search_fields = ['role', 'email', 'id', 'first_name', 'last_name']
+    filterset_fields = ['role', 'email', 'id', 'first_name', 'last_name']
     ordering_fields = '__all__'
     filter_backends = [DynamicSearchFilter, django_filters.rest_framework.DjangoFilterBackend, filters.OrderingFilter]
 
