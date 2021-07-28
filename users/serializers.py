@@ -18,13 +18,23 @@ class CustomRegisterSerializer(RegisterSerializer):
     first_name = serializers.CharField(required=False)
     last_name = serializers.CharField(required=False)
     role = serializers.CharField(required=False)
+    webpage = serializers.CharField(required=False)
+    twitter = serializers.CharField(required=False)
+    instagram = serializers.CharField(required=False)
+    facebook = serializers.CharField(required=False)
+    flicker = serializers.CharField(required=False)
 
     def get_cleaned_data(self):
         validated_data = super(CustomRegisterSerializer, self).get_cleaned_data()
         validated_data.update({
             'first_name': self.validated_data.get('first_name', ''),
             'last_name': self.validated_data.get('last_name', ''),
-            'role': self.validated_data.get('role', '')
+            'role': self.validated_data.get('role', ''),
+            'webpage': self.validated_data.get('webpage', ''),
+            'twitter': self.validated_data.get('twitter', ''),
+            'instagram': self.validated_data.get('instagram', ''),
+            'facebook': self.validated_data.get('facebook', ''),
+            'flicker': self.validated_data.get('flicker', '')
         })
         return validated_data
 
@@ -33,6 +43,11 @@ class CustomRegisterSerializer(RegisterSerializer):
         user.first_name = self.data.get('first_name')
         user.last_name = self.data.get('last_name')
         user.role = self.data.get('role')
+        user.webpage = self.data.get('webpage')
+        user.twitter = self.data.get('twitter')
+        user.instagram = self.data.get('instagram')
+        user.facebook = self.data.get('facebook')
+        user.flicker = self.data.get('flicker')
         user.save()
         return user
 
