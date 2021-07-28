@@ -105,12 +105,8 @@ class Users(ListAPIView):
 class SingleUser(RetrieveUpdateDestroyAPIView):
     queryset = CustomUser.objects.all()
     write_serializer_class = UserProfileBirdsSerializer
+    permission_classes = (AdminCustomPermission,)
     read_serializer_class = UserProfileBirdsReadSerializer
-
-    def put(self, request, *args, **kwargs):
-        self.queryset = CustomUser.objects.all()
-        self.permission_classes = (AdminCustomPermission,)
-        return super().put(request, *args, **kwargs)
 
 
 # class BirdEditorView(APIView):

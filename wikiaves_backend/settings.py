@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     'rest_auth.registration',
     'django_filters',
 
+    'allauth.socialaccount',  # To allow delete users
+
     'django_cleanup.apps.CleanupConfig',
 ]
 
