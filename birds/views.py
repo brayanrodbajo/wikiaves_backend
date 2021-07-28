@@ -219,13 +219,13 @@ class Authors(ListCreateAPIView):
     write_serializer_class = AuthorSerializer
     pagination_class = LimitOffsetPagination
     permission_classes = (AdminCustomPermission,)
-    search_fields = ['first_name', 'last_name']
+    search_fields = ['first_name', 'last_name', 'email']
+    filterset_fields = ['first_name', 'last_name', 'email']
+    ordering_fields = '__all__'
     filter_backends = (filters.SearchFilter,)
 
     def get_queryset(self):
-        queryset = MultimediaAuthor.objects.filter(
-            Q(images_authored__isnull=False) | Q(videos_authored__isnull=False) | Q(audios_authored__isnull=False)
-        ).distinct()
+        queryset = self.queryset
         media_type = self.request.query_params.get('media_type', None)
         if media_type == 'images':
             queryset = self.queryset.filter(images_authored__isnull=False).distinct()
