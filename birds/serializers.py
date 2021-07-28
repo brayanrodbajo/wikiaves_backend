@@ -47,10 +47,18 @@ class ReferenceAuthorSerializer(serializers.ModelSerializer):
 class AuthorReadSerializer(serializers.ModelSerializer):
     image = ImageSerializer(required=False, allow_null=True)
     description = TextSerializer(required=False, allow_null=True)
+    is_user = serializers.SerializerMethodField(required=False, allow_null=True)
 
     class Meta:
         model = MultimediaAuthor
         fields = '__all__'
+
+    def get_is_user(self, obj):
+        try:
+            CustomUser.objects.get(id=obj.id)
+            return True
+        except ObjectDoesNotExist:
+            return False
 
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -1961,11 +1969,18 @@ class AuthorMediaSerializer(serializers.ModelSerializer):
     images_authored = BirdImageAuthorSerializer(read_only=True, many=True, required=False)
     videos_authored = VideoAuthorSerializer(read_only=True, many=True, required=False)
     audios_authored = AudioAuthorSerializer(read_only=True, many=True, required=False)
+    is_user = serializers.SerializerMethodField(required=False, allow_null=True)
 
     class Meta:
         model = MultimediaAuthor
         fields = '__all__'
 
+    def get_is_user(self, obj):
+        try:
+            CustomUser.objects.get(id=obj.id)
+            return True
+        except ObjectDoesNotExist:
+            return False
 
 class BirdIdsSerializer(serializers.ModelSerializer):
     class Meta:
