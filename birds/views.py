@@ -7,7 +7,7 @@ import django_filters.rest_framework
 from django.views.defaults import bad_request
 from rest_condition import Or
 from rest_framework import generics, viewsets, views, status, filters
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -253,6 +253,7 @@ def get_names(request):
 
 
 @api_view(['POST'])
+@permission_classes((AdminCustomPermission, ))
 def exists_bird_file(request):
     path = handle_uploaded_file(request.FILES['file'])
     response = bird_exists(os.path.join(settings.MEDIA_ROOT, path))
@@ -264,6 +265,7 @@ def exists_bird_file(request):
 
 
 @api_view(['POST'])
+@permission_classes((AdminCustomPermission, ))
 def upload_bird_file(request):
     path = handle_uploaded_file(request.FILES['file'])
     response = doc_to_model(os.path.join(settings.MEDIA_ROOT, path))
