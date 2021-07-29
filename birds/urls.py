@@ -24,6 +24,8 @@ urlpatterns = [
     path('authors', views.Authors.as_view()),
     path('authors/<int:pk>', views.SingleAuthor.as_view()),
     path('get_names', views.get_names),
+    path('exists_bird_file', views.exists_bird_file),
+    path('upload_bird_file', views.upload_bird_file),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

@@ -1,3 +1,6 @@
+import os
+
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 import django_filters.rest_framework
@@ -20,6 +23,9 @@ from birds.serializers import BirdSerializer, OrderSerializer, FamilySerializer,
     AuthorSerializer, AuthorIdsSerializer, AuthorMediaSerializer
 from birds.serializers import BirdIdsSerializer, OrderIdsSerializer, FamilyIdsSerializer
 from users.permissions import AdminCustomPermission, EditorCustomPermission
+
+
+from services.doc_to_model import bird_exists, handle_uploaded_file, delete_uploaded_file, doc_to_model
 
 
 class DynamicSearchFilter(filters.SearchFilter):
@@ -186,33 +192,6 @@ class SingleFamily(RetrieveUpdateDestroyAPIView):
     permission_classes = (AdminCustomPermission,)
 
 
-@api_view(['GET'])
-def get_names(request):
-    model = request.query_params.get('model', None)
-    if model:
-        if model == 'feeding':
-            names = list(Bird.objects.order_by().values_list('feeding__names__text', flat=True).distinct())
-        else:
-            try:
-                names = list(Bird.objects.order_by().values_list(model + '__name__text', flat=True).distinct())
-            except Exception as e:
-                resp = {
-                    "message": str(e)
-                }
-                return Response(resp, status=status.HTTP_400_BAD_REQUEST)
-        if None in names:
-            names.remove(None)
-        resp = {
-            "results": names
-        }
-        return Response(resp, status=status.HTTP_200_OK)
-    else:
-        resp = {
-            "message": "model query param required"
-        }
-        return Response(resp, status=status.HTTP_400_BAD_REQUEST)
-
-
 class Authors(ListCreateAPIView):
     queryset = MultimediaAuthor.objects.all()
     read_serializer_class = AuthorMediaSerializer
@@ -244,3 +223,52 @@ class SingleAuthor(RetrieveUpdateDestroyAPIView):
     read_serializer_class = AuthorMediaSerializer
     write_serializer_class = AuthorSerializer
     permission_classes = (AdminCustomPermission,)
+
+
+@api_view(['GET'])
+def get_names(request):
+    model = request.query_params.get('model', None)
+    if model:
+        if model == 'feeding':
+            names = list(Bird.objects.order_by().values_list('feeding__names__text', flat=True).distinct())
+        else:
+            try:
+                names = list(Bird.objects.order_by().values_list(model + '__name__text', flat=True).distinct())
+            except Exception as e:
+                resp = {
+                    "message": str(e)
+                }
+                return Response(resp, status=status.HTTP_400_BAD_REQUEST)
+        if None in names:
+            names.remove(None)
+        resp = {
+            "results": names
+        }
+        return Response(resp, status=status.HTTP_200_OK)
+    else:
+        resp = {
+            "message": "model query param required"
+        }
+        return Response(resp, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def exists_bird_file(request):
+    path = handle_uploaded_file(request.FILES['file'])
+    response = bird_exists(os.path.join(settings.MEDIA_ROOT, path))
+    delete_uploaded_file(path)
+    if response['success']:
+        return Response(response, status=status.HTTP_200_OK)
+    else:
+        return Response(response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def upload_bird_file(request):
+    path = handle_uploaded_file(request.FILES['file'])
+    response = doc_to_model(os.path.join(settings.MEDIA_ROOT, path))
+    delete_uploaded_file(path)
+    if response['success']:
+        return Response(response, status=status.HTTP_200_OK)
+    else:
+        return Response(response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

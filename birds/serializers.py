@@ -1599,7 +1599,7 @@ class BirdSerializer(serializers.ModelSerializer):
                                   for item in instance.vocalizations.filter(category='SONG').first().audios.all()]
                 new_songs = []
                 for item in vocalizations_data:
-                    if item['category'] == 'SONG':
+                    if item['category'] == 'SONG' and 'audios' in item:
                         new_songs = item['audios']
                 to_delete = [item for item in instance_songs if item not in new_songs]
                 for au in to_delete:
@@ -1609,7 +1609,7 @@ class BirdSerializer(serializers.ModelSerializer):
                                   for item in instance.vocalizations.filter(category='CALL').first().audios.all()]
                 new_calls = []
                 for item in vocalizations_data:
-                    if item['category'] == 'CALL':
+                    if item['category'] == 'CALL' and 'audios' in item:
                         new_calls = item['audios']
                 to_delete = [item for item in instance_calls if item not in new_calls]
                 for au in to_delete:
@@ -1638,10 +1638,11 @@ class BirdSerializer(serializers.ModelSerializer):
                                         xc['main'] = True
                                     else:
                                         xc['main'] = False
-                                for au in song['audios']:
-                                    au.main = False
-                                    au.vocalization = None
-                                    au.save()
+                                if 'audios' in song:
+                                    for au in song['audios']:
+                                        au.main = False
+                                        au.vocalization = None
+                                        au.save()
                     else:
                         if 'audios' in song:
                             for au in song['audios']:
