@@ -151,7 +151,7 @@ class SetNewPasswordSerializer(serializers.Serializer):
             raise AuthenticationFailed('The reset link is invalid', 401)
 
 
-from birds.serializers import BirdSerializer
+from birds.serializers import BirdReadSerializer
 from birds.models import Bird
 
 
@@ -167,7 +167,7 @@ class UserProfileBirdsReadSerializer(serializers.ModelSerializer):
     facebook = serializers.URLField(required=False)
     flicker = serializers.URLField(required=False)
     id = serializers.IntegerField(required=False)
-    birds_assigned = BirdSerializer(many=True, required=False, allow_null=True, read_only=True)
+    birds_assigned = BirdReadSerializer(many=True, required=False, allow_null=True, read_only=True)
 
     class Meta:
         model = CustomUser
