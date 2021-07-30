@@ -220,8 +220,6 @@ class UserProfileBirdsSerializer(serializers.ModelSerializer):
             instance.role = role
         birds_assigned = validated_data.get('birds_assigned', "")
         if birds_assigned != "":
-            for bird in birds_assigned:
-                bird.current_editor = instance
-                bird.save()
+            instance.birds_assigned.set(birds_assigned)
         instance.save()
         return instance
