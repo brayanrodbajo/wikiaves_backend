@@ -168,6 +168,57 @@ class CommonNameBirdSerializer(serializers.ModelSerializer):
         return instance
 
 
+class SimilarSpeciesReadSerializer(serializers.ModelSerializer):
+    text = TextSerializer(required=False, allow_null=True)
+    bird_ids = serializers.SerializerMethodField(read_only=True, required=False, allow_null=True)
+
+    class Meta:
+        model = SimilarSpecies
+        fields = ('text', 'bird_ids')
+
+    def get_bird_ids(self, obj):
+        birds_featured_data = []
+        if len(obj.bird_ids.all()) > 0:
+            for bird in obj.bird_ids.all():
+                s_n_reordered = []
+                c_n_es = []
+                c_n_en = []
+                main_image = None
+                scientific_names = bird.scientific_names.all()
+                common_names = bird.common_names.all()
+                images = bird.images.all()
+                for s_n in scientific_names:
+                    if s_n.main:
+                        s_n_reordered.append(s_n.name)
+                for s_n in scientific_names:
+                    if not s_n.main:
+                        s_n_reordered.append(s_n.name)
+                for c_n in common_names:
+                    if c_n.main and c_n.name.language == 'es':
+                        c_n_es.append(c_n.name.text)
+                for c_n in common_names:
+                    if not c_n.main and c_n.name.language == 'es':
+                        c_n_es.append(c_n.name.text)
+                for c_n in common_names:
+                    if c_n.main and c_n.name.language == 'en':
+                        c_n_en.append(c_n.name.text)
+                for c_n in common_names:
+                    if not c_n.main and c_n.name.language == 'en':
+                        c_n_en.append(c_n.name.text)
+                for image in images:
+                    if image.main:
+                        main_image = self.context['request'].build_absolute_uri(image.url.url)
+                featured_data = {
+                    "id": bird.id,
+                    "scientific_names": s_n_reordered,
+                    "common_names_es": c_n_es,
+                    "common_names_en": c_n_en,
+                    "main_image": main_image
+                }
+                birds_featured_data.append(featured_data)
+        return birds_featured_data
+
+
 class SimilarSpeciesSerializer(serializers.ModelSerializer):
     text = TextSerializer(required=False, allow_null=True)
     bird_ids = PrimaryKeyRelatedField(many=True, queryset=Bird.objects.all(), required=False, allow_null=True)
@@ -1842,7 +1893,7 @@ class BirdReadSerializer(serializers.ModelSerializer):
     behavior = TypeSerializer(many=True, required=False, allow_null=True)
     taxonomy = TextSerializer(required=False, allow_null=True)
     conservation = TypeSerializer(required=False, allow_null=True)
-    similar_species = SimilarSpeciesSerializer(required=False, allow_null=True)
+    similar_species = SimilarSpeciesReadSerializer(required=False, allow_null=True)
     references = ReferenceSerializer(required=False, allow_null=True, many=True)
     own_citation = ReferenceSerializer(required=False, allow_null=True)
     authors = UserProfileSerializer(many=True, required=False, allow_null=True)
