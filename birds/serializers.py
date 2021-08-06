@@ -184,6 +184,10 @@ class SimilarSpeciesReadSerializer(serializers.ModelSerializer):
                 c_n_es = []
                 c_n_en = []
                 main_image = None
+                family_name = None
+                order_name = None
+                family_names = bird.family.scientific_names.all()
+                order_names = bird.family.order.scientific_names.all()
                 scientific_names = bird.scientific_names.all()
                 common_names = bird.common_names.all()
                 images = bird.images.all()
@@ -208,12 +212,20 @@ class SimilarSpeciesReadSerializer(serializers.ModelSerializer):
                 for image in images:
                     if image.main:
                         main_image = self.context['request'].build_absolute_uri(image.url.url)
+                for name in family_names:
+                    if name.main:
+                        family_name = name.name
+                for name in order_names:
+                    if name.main:
+                        order_name = name.name
                 featured_data = {
                     "id": bird.id,
                     "scientific_names": s_n_reordered,
                     "common_names_es": c_n_es,
                     "common_names_en": c_n_en,
-                    "main_image": main_image
+                    "main_image": main_image,
+                    "family": family_name,
+                    "order": order_name
                 }
                 birds_featured_data.append(featured_data)
         return birds_featured_data
