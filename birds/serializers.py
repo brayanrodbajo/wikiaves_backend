@@ -1918,13 +1918,16 @@ class BirdReadSerializer(serializers.ModelSerializer):
         exclude = ('similar_species_class_id',)
 
     def get_featured_data(self, obj):  # returns main image and names but the first element is the main and only a list of stris
-        try:
+        # try:
             s_n_reordered = []
             c_n_es = []
             c_n_en = []
             main_image = None
             main_song = None
             main_call = None
+            main_image_author = None
+            main_song_author = None
+            main_call_author = None
             scientific_names = obj.scientific_names.all()
             common_names = obj.common_names.all()
             images = obj.images.all()
@@ -1961,30 +1964,39 @@ class BirdReadSerializer(serializers.ModelSerializer):
             for image in images:
                 if image.main:
                     main_image = self.context['request'].build_absolute_uri(image.url.url)
+                    if image.author:
+                        main_image_author = AuthorSerializer(image.author).data
             for song in songs:
                 if song.main:
                     if isinstance(song, Xenocanto):
                         main_song = song.url
                     elif isinstance(song, Audio):
                         main_song = self.context['request'].build_absolute_uri(song.url.url)
+                        if song.author:
+                            main_song_author = AuthorSerializer(song.author).data
             for call in calls:
                 if call.main:
                     if isinstance(call, Xenocanto):
                         main_call = call.url
                     elif isinstance(call, Audio):
                         main_call = self.context['request'].build_absolute_uri(call.url.url)
+                        if call.author:
+                            main_call_author = AuthorSerializer(call.author).data
             featured_data = {
                 "scientific_names": s_n_reordered,
                 "common_names_es": c_n_es,
                 "common_names_en": c_n_en,
                 "main_image": main_image,
                 "main_song": main_song,
-                "main_call": main_call
+                "main_call": main_call,
+                "main_image_author": main_image_author,
+                "main_song_author": main_song_author,
+                "main_call_author": main_call_author,
             }
             return featured_data
-        except Exception as e:
-            print(e)
-            return None
+        # except Exception as e:
+        #     print(e)
+        #     return None
 
 
 class BirdImageAuthorSerializer(serializers.ModelSerializer):
