@@ -948,7 +948,7 @@ class DistributionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Distribution
-        fields = ('text', 'location_map')
+        fields = ('text', 'location_map', 'endemism')
 
     def create(self, validated_data):
         text = validated_data.pop('text', None)
@@ -959,7 +959,7 @@ class DistributionSerializer(serializers.ModelSerializer):
             else:
                 print(serializer.errors)
         location_map = validated_data.pop('location_map', None)
-        distribution = Distribution.objects.create(text=text, location_map=location_map)
+        distribution = Distribution.objects.create(text=text, location_map=location_map, **validated_data)
         return distribution
 
     def update(self, instance, validated_data):
@@ -977,6 +977,9 @@ class DistributionSerializer(serializers.ModelSerializer):
         location_map = validated_data.get('location_map', "")
         if location_map != "":
             instance.location_map = location_map
+        endemism = validated_data.get('endemism', "")
+        if endemism != "":
+            instance.endemism = endemism
         instance.save()
         return instance
 

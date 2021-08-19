@@ -123,6 +123,15 @@ class Type(models.Model):
 
 
 class Distribution(models.Model):
+    ENDEMIC = 'ENDEMIC'
+    NON_ENDEMIC = 'NON-ENDEMIC'
+    NEARLY_ENDEMIC = 'NEARLY-ENDEMIC'
+    ENDEMISM_CHOICES = (
+        ('ENDEMIC', ENDEMIC),
+        ('NON-ENDEMIC', NON_ENDEMIC),
+        ('NEARLY-ENDEMIC', NEARLY_ENDEMIC),
+    )
+    endemism = models.CharField(max_length=14, choices=ENDEMISM_CHOICES, null=True, blank=True)
     text = models.ForeignKey(Text, null=True, on_delete=models.SET_NULL, related_name='distribution')
     location_map = models.ForeignKey(Image, null=True, on_delete=models.SET_NULL, related_name='distribution')
 
