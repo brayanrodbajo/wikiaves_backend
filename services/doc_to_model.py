@@ -107,7 +107,7 @@ def bird_exists(file_path):
         }
 
 
-def doc_to_model(file_path):
+def doc_to_model(file_path, author_id=None):
     log = "Comienzo"
     try:
         if isfile(file_path):
@@ -644,6 +644,7 @@ def doc_to_model(file_path):
             log = "Bird Complete"
             try:
                 bird_obj = Bird.objects.get(scientific_names__name=sci_name)
+                payload['authors'] = [author_id]
                 serializer = BirdSerializer(bird_obj, data=payload)
                 if serializer.is_valid():
                     serializer.save()
