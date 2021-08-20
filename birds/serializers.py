@@ -184,6 +184,7 @@ class SimilarSpeciesReadSerializer(serializers.ModelSerializer):
                 c_n_es = []
                 c_n_en = []
                 main_image = None
+                main_image_location = None
                 family_name = None
                 order_name = None
                 family_names = bird.family.scientific_names.all()
@@ -212,6 +213,8 @@ class SimilarSpeciesReadSerializer(serializers.ModelSerializer):
                 for image in images:
                     if image.main:
                         main_image = self.context['request'].build_absolute_uri(image.url.url)
+                        if image.location:
+                            main_image_location = LocationSerializer(image.location).data
                 for name in family_names:
                     if name.main:
                         family_name = name.name
@@ -224,6 +227,7 @@ class SimilarSpeciesReadSerializer(serializers.ModelSerializer):
                     "common_names_es": c_n_es,
                     "common_names_en": c_n_en,
                     "main_image": main_image,
+                    "main_image_location": main_image_location,
                     "family": family_name,
                     "order": order_name
                 }
@@ -1931,6 +1935,7 @@ class BirdReadSerializer(serializers.ModelSerializer):
             main_image_author = None
             main_song_author = None
             main_call_author = None
+            main_image_location = None
             scientific_names = obj.scientific_names.all()
             common_names = obj.common_names.all()
             images = obj.images.all()
@@ -1969,6 +1974,8 @@ class BirdReadSerializer(serializers.ModelSerializer):
                     main_image = self.context['request'].build_absolute_uri(image.url.url)
                     if image.author:
                         main_image_author = AuthorSerializer(image.author).data
+                    if image.location:
+                        main_image_location = LocationSerializer(image.location).data
             for song in songs:
                 if song.main:
                     if isinstance(song, Xenocanto):
@@ -1993,6 +2000,7 @@ class BirdReadSerializer(serializers.ModelSerializer):
                 "main_song": main_song,
                 "main_call": main_call,
                 "main_image_author": main_image_author,
+                "main_image_location": main_image_location,
                 "main_song_author": main_song_author,
                 "main_call_author": main_call_author,
             }

@@ -50,7 +50,7 @@ class Birds(ListCreateAPIView):
     search_fields = ['scientific_names__name', 'common_names__name__text',
                      'family__scientific_names__name', 'family__order__scientific_names__name']
     filterset_fields = ['id', 'draft', 'scientific_names__name', 'common_names__name__text',
-                        'family__scientific_names__name', 'family__order__scientific_names__name']
+                        'family__scientific_names__name', 'family__order__scientific_names__name', 'draft']
     ordering_fields = '__all__'
 
     def get_queryset(self):
@@ -268,7 +268,7 @@ def exists_bird_file(request):
 @permission_classes((AdminCustomPermission, ))
 def upload_bird_file(request):
     path = handle_uploaded_file(request.FILES['file'])
-    response = doc_to_model(os.path.join(settings.MEDIA_ROOT, path))
+    response = doc_to_model(os.path.join(settings.MEDIA_ROOT, path), request.user.id)
     delete_uploaded_file(path)
     if response['success']:
         return Response(response, status=status.HTTP_200_OK)
