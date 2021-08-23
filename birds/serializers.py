@@ -2012,6 +2012,7 @@ class BirdReadSerializer(serializers.ModelSerializer):
 
 class BirdImageAuthorSerializer(serializers.ModelSerializer):
     bird = BirdReadSerializer(required=False, allow_null=True)
+    location = LocationSerializer(required=False, allow_null=True)
 
     class Meta:
         model = BirdImage
@@ -2023,6 +2024,7 @@ class BirdImageAuthorSerializer(serializers.ModelSerializer):
 
 class VideoAuthorSerializer(serializers.ModelSerializer):
     bird = BirdReadSerializer(required=False, allow_null=True)
+    location = LocationSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Video
@@ -2034,10 +2036,12 @@ class VideoAuthorSerializer(serializers.ModelSerializer):
 
 class AudioAuthorSerializer(serializers.ModelSerializer):
     bird = serializers.SerializerMethodField(required=False, allow_null=True)
+    category = serializers.SerializerMethodField(required=False, allow_null=True)
+    location = LocationSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Audio
-        exclude = ('id', 'author')
+        exclude = ('id', 'author', 'vocalization')
         extra_kwargs = {
             'url': {'validators': []},
         }
@@ -2046,6 +2050,13 @@ class AudioAuthorSerializer(serializers.ModelSerializer):
         try:
             bird = obj.vocalization.bird
             return BirdReadSerializer(bird).data
+        except Exception:
+            return None
+
+    def get_category(self, obj):
+        try:
+            category = obj.vocalization.category
+            return category
         except Exception:
             return None
 
