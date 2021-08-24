@@ -33,7 +33,7 @@ def custom_create_token(token_model, user, serializer):
         token.save()
     return token
 
-
+from birds.serializers import BirdReadSerializer
 class CustomLoginView(LoginView):
     def login(self):
         self.user = self.serializer.validated_data['user']
@@ -49,10 +49,12 @@ class CustomLoginView(LoginView):
 
     def get_response(self):
         original_response = super().get_response()
+        birds_assigned = [BirdReadSerializer(bird).data for bird in self.user.birds_assigned.all()]
         mydata = {"id": self.user.id, "role": self.user.role, "first_name": self.user.first_name,
                   "last_name": self.user.last_name, "username": self.user.username, "email": self.user.email,
                   "webpage": self.user.webpage, "twitter": self.user.twitter, "instagram": self.user.instagram,
-                  "facebook": self.user.facebook, "flicker": self.user.flicker}
+                  "facebook": self.user.facebook, "flicker": self.user.flicker,
+                  "birds_assigned": birds_assigned}
         original_response.data.update(mydata)
         return original_response
 
