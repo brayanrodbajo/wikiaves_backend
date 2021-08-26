@@ -163,11 +163,13 @@ def get_token_status(request):
             token = TokenModel.objects.get(key=key)
             if not is_token_expired(token):
                 user = token.user
-                resp = {"id": user.id, "role": user.role, "first_name": user.first_name,
-                             "last_name": user.last_name, "username": user.username, "email": user.email,
-                             "webpage": user.webpage, "twitter": user.twitter, "instagram": user.instagram,
-                             "facebook": user.facebook, "flicker": user.flicker}
-                return Response(resp, status=status.HTTP_200_OK)
+                birds_assigned = [BirdReadSerializer(bird).data for bird in user.birds_assigned.all()]
+                mydata = {"id": user.id, "role": user.role, "first_name": user.first_name,
+                          "last_name": user.last_name, "username": user.username, "email": user.email,
+                          "webpage": user.webpage, "twitter": user.twitter, "instagram": user.instagram,
+                          "facebook": user.facebook, "flicker": user.flicker,
+                          "birds_assigned": birds_assigned}
+                return Response(mydata, status=status.HTTP_200_OK)
             else:
                 resp = {'detail': 'Token has expired'}
                 return Response(resp, status=status.HTTP_401_UNAUTHORIZED)
