@@ -1584,8 +1584,8 @@ class BirdSerializer(serializers.ModelSerializer):
                     print(serializer.errors)
             else:
                 instance.own_citation = None
-        current_editor = validated_data.pop('current_editor', None)
-        if current_editor:
+        current_editor = validated_data.pop('current_editor', '')
+        if current_editor != '':
             instance.current_editor = current_editor
 
         subspecies_data = validated_data.pop('subspecies', '')
