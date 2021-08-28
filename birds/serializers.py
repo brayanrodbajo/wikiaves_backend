@@ -1925,7 +1925,7 @@ class BirdReadSerializer(serializers.ModelSerializer):
         exclude = ('similar_species_class_id',)
 
     def get_featured_data(self, obj):  # returns main image and names but the first element is the main and only a list of stris
-        # try:
+        try:
             s_n_reordered = []
             c_n_es = []
             c_n_en = []
@@ -2005,9 +2005,9 @@ class BirdReadSerializer(serializers.ModelSerializer):
                 "main_call_author": main_call_author,
             }
             return featured_data
-        # except Exception as e:
-        #     print(e)
-        #     return None
+        except Exception as e:
+            print(e)
+            return None
 
 
 class BirdImageAuthorSerializer(serializers.ModelSerializer):
@@ -2049,15 +2049,17 @@ class AudioAuthorSerializer(serializers.ModelSerializer):
     def get_bird(self, obj):
         try:
             bird = obj.vocalization.bird
-            return BirdReadSerializer(bird).data
-        except Exception:
+            return BirdReadSerializer(bird, context=self.context).data
+        except Exception as e:
+            print(e)
             return None
 
     def get_category(self, obj):
         try:
             category = obj.vocalization.category
             return category
-        except Exception:
+        except Exception as e:
+            print(e)
             return None
 
 

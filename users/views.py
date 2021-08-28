@@ -49,7 +49,7 @@ class CustomLoginView(LoginView):
 
     def get_response(self):
         original_response = super().get_response()
-        birds_assigned = [BirdReadSerializer(bird).data for bird in self.user.birds_assigned.all()]
+        birds_assigned = [BirdReadSerializer(bird, context={'request': self.request}).data for bird in self.user.birds_assigned.all()]
         mydata = {"id": self.user.id, "role": self.user.role, "first_name": self.user.first_name,
                   "last_name": self.user.last_name, "username": self.user.username, "email": self.user.email,
                   "webpage": self.user.webpage, "twitter": self.user.twitter, "instagram": self.user.instagram,
@@ -163,7 +163,8 @@ def get_token_status(request):
             token = TokenModel.objects.get(key=key)
             if not is_token_expired(token):
                 user = token.user
-                birds_assigned = [BirdReadSerializer(bird).data for bird in user.birds_assigned.all()]
+                birds_assigned = [BirdReadSerializer(bird, context={'request': request}).data
+                                  for bird in user.birds_assigned.all()]
                 mydata = {"id": user.id, "role": user.role, "first_name": user.first_name,
                           "last_name": user.last_name, "username": user.username, "email": user.email,
                           "webpage": user.webpage, "twitter": user.twitter, "instagram": user.instagram,
